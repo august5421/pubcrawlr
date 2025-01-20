@@ -1,0 +1,23 @@
+body, html {
+  margin: 0;
+  overflow-x: hidden !important;
+  overflow-y: hidden !important;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+@font-face {
+  font-family: 'PrimaryOrig';
+  src: url('../public/assets/fonts/Primary.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'SecondaryOrig';
+  src: url('../public/assets/fonts/Secondary.ttf') format('truetype');
+}
+
+.css-4dq96w-MuiCardContent-root:last-child {
+  padding-bottom: 10px !important;
+} 
