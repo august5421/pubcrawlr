@@ -54,3 +54,7 @@ export const setModal = (open, content = null) => ({
   type: 'SET_MODAL',
   payload: { open, content },
 });
+export const setUnseenRequests = (count) => ({
+  type: 'SET_UNSEEN_REQUESTS',
+  payload: count,
+});

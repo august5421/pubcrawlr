@@ -6,7 +6,7 @@ import Navbar from './components/Navbar';
 import MainPage from './pages/MainPage';
 import AuthPage from './pages/AuthPage';
 import { Alert, Fade, Snackbar, Modal, Typography, Button } from '@mui/material';
-import { setActiveUser, setAlert, setUserBarCrawls, setModal, setIsLoading } from './actions/actions';
+import { setActiveUser, setAlert, setUserBarCrawls, setModal, setIsLoading, setUnseenRequests } from './actions/actions';
 import Cookies from 'js-cookie';
 import AccountPage from './pages/AccountPage';
 import CrawlPage from './pages/CrawlPage';
@@ -21,13 +21,17 @@ function App() {
   const alert = useSelector((state) => state.alert); 
   const changeInData = useSelector((state) => state.changeInData); 
   const modalState = useSelector((state) => state.modalState);
+  const unseenRequests = useSelector((state) => state.unseenRequests);
+  const location = useSelector((state) => state.location);
+
+  useEffect(()=>{console.log(location)}, [location])
   
   const handleCloseMod = () => {
      dispatch(setModal(false, null))
      dispatch(setIsLoading(false))
   };
 
-  useEffect(() => {
+  useEffect(() => { 
     const userCookie = Cookies.get('user');
     if (userCookie) {
       const user = JSON.parse(userCookie);
@@ -36,9 +40,10 @@ function App() {
       dispatch(setActiveUser({ key: 'Email', value: user.userEmail }));
       dispatch(setActiveUser({ key: 'UserAvatarType', value: user.UserAvatarType }));
       dispatch(setActiveUser({ key: 'Friends', value: user.Friends }));
+      dispatch(setActiveUser({ key: 'userLocation', value: user.userLocation }));
     }
   }, []);
-
+  
   useEffect(() => {
     const fetchUserBarCrawls = async () => {
       if (!activeUser?.UserId) return;
@@ -53,6 +58,8 @@ function App() {
         const friendsQuery = db.collection('Friends').where('UserId', '==', activeUser.UserId);
         const friendsSnapshot = await friendsQuery.get();
         const friendsData = friendsSnapshot.docs.map(doc => doc.data().Friends);
+        const unseenCount = friendsData[0]?.filter(friend => friend.Seen === false && friend.RequestedBy === friend.friendId);
+        dispatch(setUnseenRequests(unseenCount?.length))
         dispatch(setActiveUser({ key: 'Friends', value: friendsData }));
         dispatch(setUserBarCrawls(allCrawls));
       } catch (error) {
