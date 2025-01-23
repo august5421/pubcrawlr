@@ -10,6 +10,8 @@ import MyLocationIcon from "@mui/icons-material/MyLocation";
 import BarCard from "../components/BarCard";
 import BarCrawlOrganizer from "../components/BarCrawlOrganizer";
 import VibeChecker from "../components/VibeChecker";
+import maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
 
 function MainPage() {
   const dispatch = useDispatch();
@@ -22,11 +24,13 @@ function MainPage() {
   const barResults = useSelector((state) => state.barResults);
 
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [nearbyLoaded, setNearbyLoaded] = useState(false);
   const [autocomplete, setAutocomplete] = useState(null);
   const [locationReq, setLocationReq] = useState(0);
   const [vibeSearch, setVibeSearch] = useState(
     "bar OR pub OR drinks OR cocktails"
   );
+  const [map, setMap] = useState(null);
   
   //get user location
   useEffect(() => {
@@ -43,23 +47,26 @@ function MainPage() {
     }
   }, []);
 
-  //init API
+  //render map
   useEffect(() => {
     if (!mapLoaded && location) {
-      const existingScript = document.querySelector(
-        'script[src*="maps.googleapis.com"]'
-      );
-      if (!existingScript) {
-        const script = document.createElement("script");
-        script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyBERPw7z0F-9OZAw8P2fBrKAGLtPEBWMLw&libraries=places`;
-        script.async = true;
-        script.onload = () => {
-          setMapLoaded(true);
-        };
-        document.body.appendChild(script);
-      } else {
-        setMapLoaded(true);
-      }
+      if (map) return;
+
+      const newMap = new maplibregl.Map({
+        container: 'map',
+        style: `https://api.maptiler.com/maps/openstreetmap/style.json?key=uyov68efNrdYsMZCjhLO`,
+        center: [location.longitude, location.latitude],
+        zoom: 14
+      });
+      newMap.addControl(new maplibregl.NavigationControl(), 'top-right');
+      newMap.on('load', async () => {
+        newMap.loadImage(mapPin).then((image) => {
+          newMap.addImage('custom-marker', image.data);
+        });
+      });
+
+      setMap(newMap);
+      initializeGoogleApi();
     }
   }, [location, mapLoaded]);
 
@@ -95,32 +102,11 @@ function MainPage() {
 
   //get nearby bars
   useEffect(() => {
-    if (mapLoaded && location) {
-      const map = new window.google.maps.Map(document.getElementById("map"), {
-        center: { lat: location.latitude, lng: location.longitude },
-        zoom: 14,
-        disableDefaultUI: true,
-        zoomControl: false,
-        streetViewControl: false,
-        mapTypeControl: false,
-      });
-
-      const userIcon = {
-        url: userPin,
-        scaledSize: new window.google.maps.Size(50, 50),
-      };
-
-      new window.google.maps.Marker({
-        position: { lat: location.latitude, lng: location.longitude },
-        map,
-        icon: userIcon,
-        title: "You are here",
-        zIndex: 1000,
-      });
+    if (mapLoaded && location && locationReq > 0) {
+      const googleMap = new window.google.maps.Map(document.getElementById("gmap"));
 
       if (window.google && window.google.maps && window.google.maps.places) {
-        const service = new window.google.maps.places.PlacesService(map);
-
+        const service = new window.google.maps.places.PlacesService(googleMap);
         const request = {
           location: { lat: location.latitude, lng: location.longitude },
           rankBy: google.maps.places.RankBy.DISTANCE,
@@ -128,177 +114,206 @@ function MainPage() {
           keyword: vibeSearch,
         };
 
-        if (locationReq > 0) {
-          service.nearbySearch(request, (results, status) => {
-            if (status === window.google.maps.places.PlacesServiceStatus.OK) {
-              const barsWithDistance = results.map((place) => {
-                const distance = haversineDistance(
-                  location.latitude,
-                  location.longitude,
-                  place.geometry.location.lat(),
-                  place.geometry.location.lng()
-                );
-                const imageUrl = place.photos
-                  ? place.photos[0].getUrl({ maxWidth: 100, maxHeight: 100 })
-                  : null;
-                return { ...place, distance, imageUrl };
-              });
-
-              const sortedBars = barsWithDistance.sort(
-                (a, b) => a.distance - b.distance
+        service.nearbySearch(request, (results, status) => {
+          if (status === window.google.maps.places.PlacesServiceStatus.OK) {
+            const barsWithDistance = results.map((place) => {
+              const distance = haversineDistance(
+                location.latitude,
+                location.longitude,
+                place.geometry.location.lat(),
+                place.geometry.location.lng()
               );
-              dispatch(setBarResults(sortedBars));
-            } else {
-              console.error("PlacesService failed:", status);
-            }
-          });
-        }
-      } else {
-        console.error("Google Maps PlacesService is not available.");
-      }
-    }
-  }, [mapLoaded, location, vibeSearch]);
-
-  //map pins out
-  useEffect(() => {
-    if (mapLoaded && location) {
-      const map = new window.google.maps.Map(document.getElementById("map"), {
-        center: { lat: location.latitude, lng: location.longitude },
-        zoom: 14,
-        disableDefaultUI: true,
-        zoomControl: false,
-        streetViewControl: false,
-        mapTypeControl: false,
-      });
-  
-      const userIcon = {
-        url: userPin,
-        scaledSize: new window.google.maps.Size(50, 50),
-      };
-  
-      new window.google.maps.Marker({
-        position: { lat: location.latitude, lng: location.longitude },
-        map,
-        icon: userIcon,
-        title: "You are here",
-        zIndex: 1000,
-      });
-  
-      const addMarkers = (places, iconUrl) => {
-        places.forEach((place) => {
-          if (place.geometry && place.geometry.location) {
-            const photoUrl = place.photos?.[0]?.getUrl({
-              maxHeight: place.photos[0].height,
-            }) || "";
-      
-            const marker = new window.google.maps.Marker({
-              position: place.geometry.location,
-              map,
-              icon: {
-                url: iconUrl,
-                scaledSize: new window.google.maps.Size(50, 50),
-              },
-              title: place.name,
-            });
-  
-            const infoWindow = new window.google.maps.InfoWindow({
-              disableAutoPan: true, 
-            });
-      
-            google.maps.event.addListener(infoWindow, "domready", () => {
-              const infoWindowElements = document.querySelectorAll(
-                ".gm-style-iw-chr"
-              );
-              infoWindowElements.forEach((div) => div.style.display = "none");
-              const infoWindowCont = document.querySelectorAll(
-                ".gm-style-iw"
-              );
-              infoWindowCont.forEach((div) => div.style.padding = "0px");
+              const imageUrl = place.photos
+                ? place.photos[0].getUrl({ maxWidth: 100, maxHeight: 100 })
+                : null;
+              return { ...place, distance, imageUrl };
             });
 
-            marker.addListener("mouseover", () => {
-              infoWindow.setContent(`
-                <div style="display: flex; flex-direction: column; align-items: left;">
-                  ${photoUrl ? `<img src="${photoUrl}" alt="${place.name}" style="width: 200px; padding: 0px; height: 150px; object-fit: cover;" />` : ""}
-                  <div style="font-weight: bold; font-size: 16px; margin: 8px;">
-                    ${place.name.length > 38 ? `${place.name.slice(0, 20)}...` : place.name}
-                  </div>
-                  <div style="font-size: 14px; margin-left: 8px;">Rating: ${place.rating || "N/A"}</div>
-                  <div style="font-size: 14px; margin-left: 8px;">Price: ${place.price_level ? "$".repeat(place.price_level) : "N/A"}</div>
-                </div>
-              `);
-              infoWindow.open(map, marker);
-            });
-      
-            marker.addListener("mouseout", () => {
-              infoWindow.close();
-            });
-
-            marker.addListener("click", () => {
-              if (selectedBars.some(bar => bar.place_id === place.place_id)) {
-                const updatedBars = selectedBars.filter((bar) => bar.place_id !== place.place_id);
-                dispatch(setSelectedBars(updatedBars));
-              } else {
-                dispatch(setSelectedBars([...selectedBars, place]));
-              }
-              
-            })
+            const sortedBars = barsWithDistance.sort(
+              (a, b) => a.distance - b.distance
+            );
+            dispatch(setBarResults(sortedBars));
+            setNearbyLoaded(true);
+          } else {
+            console.error("PlacesService failed:", status);
           }
         });
-      };
-  
-      addMarkers(barResults, mapPin);
-  
-      if (selectedBars.length > 0) {
-        addMarkers(selectedBars, selectedMapPin);
-  
-        if (selectedBars.length > 1) {
-          const directionsService = new window.google.maps.DirectionsService();
-          const directionsRenderer = new window.google.maps.DirectionsRenderer({
-            map,
-            suppressMarkers: true,
-            polylineOptions: {
-              strokeColor: theme.primary,
-              strokeWeight: 5,
-              strokeOpacity: 1.0,
-            },
-          });
-  
-          const waypoints = selectedBars.slice(1, -1).map((place) => ({
-            location: place.geometry.location,
-            stopover: true,
-          }));
-  
-          getWalkingTime(selectedBars[0].geometry.location, selectedBars[selectedBars.length - 1].geometry.location)
-            .then((walkingTime) => {
-              const travelMode =
-                walkingTime > 900 
-                  ? window.google.maps.TravelMode.DRIVING
-                  : window.google.maps.TravelMode.WALKING;
-  
-              directionsService.route(
-                {
-                  origin: selectedBars[0].geometry.location,
-                  destination: selectedBars[selectedBars.length - 1].geometry.location,
-                  waypoints: waypoints,
-                  travelMode: travelMode,
-                },
-                (result, status) => {
-                  if (status === "OK") {
-                    directionsRenderer.setDirections(result);
-                  } else {
-                    console.error("Error fetching directions: ", status);
-                  }
-                }
-              );
-            })
-            .catch((error) => {
-              console.error(error);
-            });
-        }
       }
     }
-  }, [mapLoaded, location, barResults, selectedBars]);
+  }, [mapLoaded, location, vibeSearch, locationReq]);
+
+//  map pins out
+  useEffect(() => {
+    if (mapLoaded && location && nearbyLoaded) {
+      const newMap = map;
+      //add user marker
+      new maplibregl.Marker({
+        color: "#42f55a"
+      }).setLngLat([location.longitude, location.latitude]).addTo(newMap);
+
+      // add bar result markers
+      barResults.forEach((x) => {
+        const photoUrl = x.photos?.[0]?.getUrl({
+          maxHeight: x.photos[0].height,
+        }) || "";
+
+        new maplibregl.Marker({
+          color: '#3275a8'
+        }).setLngLat([x.geometry.location.lng(), x.geometry.location.lat()])
+        .setPopup(new maplibregl.Popup().setHTML(`<div style="display: flex; flex-direction: column; align-items: left;">
+                                    ${photoUrl ? `<img src="${photoUrl}" alt="${x.name}" style="width: 200px; padding: 0px; height: 150px; object-fit: cover;" />` : ""}
+                                    <div style="font-weight: bold; font-size: 16px; margin: 8px;">
+                                      ${x.name.length > 38 ? `${x.name.slice(0, 20)}...` : x.name}
+                                    </div>
+                                    <div style="font-size: 14px; margin-left: 8px;">Rating: ${x.rating || "N/A"}</div>
+                                    <div style="font-size: 14px; margin-left: 8px;">Price: ${x.price_level ? "$".repeat(x.price_level) : "N/A"}</div>
+                                  </div>`))
+        .addTo(newMap);
+      });
+      
+      // WORK IN PROGRESS, TRYING TO GET THIS SHIT TO WORK
+      // const markerGeojson = {
+      //   'type': 'geojson',
+      //   'data': {
+      //     'type': 'FeatureCollection',
+      //     'features': [
+      //       barResults.map(x => {
+      //         const photoUrl = x.photos?.[0]?.getUrl({
+      //           maxHeight: x.photos[0].height,
+      //         }) || "";
+      //         return {
+      //           'type': 'Feature',
+      //           'properties': {
+      //             'description': `<div style="display: flex; flex-direction: column; align-items: left;">
+      //                               ${photoUrl ? `<img src="${photoUrl}" alt="${x.name}" style="width: 200px; padding: 0px; height: 150px; object-fit: cover;" />` : ""}
+      //                               <div style="font-weight: bold; font-size: 16px; margin: 8px;">
+      //                                 ${x.name.length > 38 ? `${x.name.slice(0, 20)}...` : x.name}
+      //                               </div>
+      //                               <div style="font-size: 14px; margin-left: 8px;">Rating: ${x.rating || "N/A"}</div>
+      //                               <div style="font-size: 14px; margin-left: 8px;">Price: ${x.price_level ? "$".repeat(x.price_level) : "N/A"}</div>
+      //                             </div>`,
+      //             'placeId': x.place_id
+      //           },
+      //           'geometry': {
+      //             'type': 'Point',
+      //             'coordinates': [x.geometry.location.lng(), x.geometry.location.lat()]
+      //           }
+      //         }
+      //       })
+      //     ]
+      //   }
+      // };
+
+      // WORK IN PROGRESS, TRYING TO GET THIS SHIT TO WORK
+      // newMap.on('load', async () => {
+      //   newMap.addSource('bars', markerGeojson);
+      //   newMap.addLayer({
+      //     'id': 'bars',
+      //     'type': 'symbol',
+      //     'source': 'bars',
+      //     'layout': {
+      //       'icon-overlap': 'always',
+      //       'icon-image': 'custom-marker'
+      //     }
+      //   });
+  
+      //   const popup = new maplibregl.Popup({
+      //     closeButton: false,
+      //     closeOnClick: false
+      //   });
+
+      //   newMap.on('mouseenter', 'bars', (e) => {
+      //     // Change the cursor style as a UI indicator.
+      //     newMap.getCanvas().style.cursor = 'pointer';
+  
+      //     const coordinates = e.features[0].geometry.coordinates.slice();
+      //     const description = e.features[0].properties.description;
+  
+      //     // Ensure that if the map is zoomed out such that multiple
+      //     // copies of the feature are visible, the popup appears
+      //     // over the copy being pointed to.
+      //     while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+      //         coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+      //     }
+  
+      //     // Populate the popup and set its coordinates
+      //     // based on the feature found.
+      //     popup.setLngLat(coordinates).setHTML(description).addTo(newMap);
+      //   });
+
+      //   newMap.on('mouseleave', 'bars', () => {
+      //     newMap.getCanvas().style.cursor = '';
+      //     popup.remove();
+      //   });
+  
+      //   newMap.on('click', 'bars', (e) => {
+      //     const selectedPlace = e.features[0].properties.place_id;
+      //     if (selectedBars.some(bar => bar.place_id === selectedPlace)) {
+      //       const updatedBars = selectedBars.filter(x => x.place_id !== selectedPlace);
+      //       dispatch(setSelectedBars(updatedBars));
+      //     } else {
+      //       const place = places.find(x => x.place_id === selectedPlace);
+      //       dispatch(setSelectedBars([...selectedBars, place]));
+      //     }
+      //   });
+      // });
+
+      setMap(newMap);
+
+      // TODO: click handling to add bars, install package for directions service, plot route
+
+
+
+      // if (selectedBars.length > 0) {
+      //   addMarkers(selectedBars, selectedMapPin);
+  
+      //   if (selectedBars.length > 1) {
+      //     const directionsService = new window.google.maps.DirectionsService();
+      //     const directionsRenderer = new window.google.maps.DirectionsRenderer({
+      //       map,
+      //       suppressMarkers: true,
+      //       polylineOptions: {
+      //         strokeColor: theme.primary,
+      //         strokeWeight: 5,
+      //         strokeOpacity: 1.0,
+      //       },
+      //     });
+  
+      //     const waypoints = selectedBars.slice(1, -1).map((place) => ({
+      //       location: place.geometry.location,
+      //       stopover: true,
+      //     }));
+  
+      //     getWalkingTime(selectedBars[0].geometry.location, selectedBars[selectedBars.length - 1].geometry.location)
+      //       .then((walkingTime) => {
+      //         const travelMode =
+      //           walkingTime > 900 
+      //             ? window.google.maps.TravelMode.DRIVING
+      //             : window.google.maps.TravelMode.WALKING;
+  
+      //         directionsService.route(
+      //           {
+      //             origin: selectedBars[0].geometry.location,
+      //             destination: selectedBars[selectedBars.length - 1].geometry.location,
+      //             waypoints: waypoints,
+      //             travelMode: travelMode,
+      //           },
+      //           (result, status) => {
+      //             if (status === "OK") {
+      //               directionsRenderer.setDirections(result);
+      //             } else {
+      //               console.error("Error fetching directions: ", status);
+      //             }
+      //           }
+      //         );
+      //       })
+      //       .catch((error) => {
+      //         console.error(error);
+      //       });
+      //   }
+      // }
+    }
+  }, [mapLoaded, location, nearbyLoaded, selectedBars]);
   
   
   const handleUseLocation = () => {
@@ -315,6 +330,25 @@ function MainPage() {
     }
     setLocationReq(locationReq + 1);
   };
+
+  const initializeGoogleApi = () => {
+    if (!mapLoaded && location) {
+      const existingScript = document.querySelector(
+        'script[src*="maps.googleapis.com"]'
+      );
+      if (!existingScript) {
+        const script = document.createElement("script");
+        script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyBERPw7z0F-9OZAw8P2fBrKAGLtPEBWMLw&libraries=places`;
+        script.async = true;
+        script.onload = () => {
+          setMapLoaded(true);
+        };
+        document.body.appendChild(script);
+      } else {
+        setMapLoaded(true);
+      }
+    }
+  }
 
   return (
     <Box
@@ -489,6 +523,7 @@ function MainPage() {
         }}
       >
         <Box id="map" style={{ width: "100%", height: "calc(100vh - 50px)" }} />
+        <Box id="gmap" style={{ display: "none"}}/>
       </Box>
       {selectedBars.length > 0 && (
           <BarCrawlOrganizer />
