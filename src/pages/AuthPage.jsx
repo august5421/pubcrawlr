@@ -14,6 +14,7 @@ function AuthPage({ mode }) {
   const theme = useSelector((state) => state.theme);
   const isMobile = useSelector((state) => state.isMobile);
   const isLoading = useSelector((state) => state.isLoading);
+  const location = useSelector((state) => state.location);
   
   const [formState, setFormState] = useState({
     fName: '',
@@ -94,6 +95,7 @@ function AuthPage({ mode }) {
             dispatch(setActiveUser({ key: 'Email', value: userData.UserEmail }));
             dispatch(setActiveUser({ key: 'UserAvatarType', value: userData.UserAvatarType }));
             dispatch(setActiveUser({ key: 'Friends', value: friendsArray }));
+            dispatch(setActiveUser({ key: 'userLocation', value: userData.userLocation }));
             dispatch(setIsLoading(false))
   
             Cookies.set('user', JSON.stringify({
@@ -101,7 +103,8 @@ function AuthPage({ mode }) {
               userName: `${userData.UserFirstName} ${userData.UserLastName}`,
               userEmail: userData.UserEmail,
               UserAvatarType: userData.UserAvatarType,
-              Friends: friendsArray
+              Friends: friendsArray,
+              userLocation: location ? location : null
             }), { expires: 7 });
           } else {
             console.log('No such user data found in Firestore!');
@@ -124,6 +127,7 @@ function AuthPage({ mode }) {
                   UserLastName: lName,
                   UserAvatarType: 'text',
                   CreateDate: new Date(),
+                  userLocation: location ? location : null
               });
       
               await setDoc(doc(db, 'Friends', user.uid), {
@@ -142,6 +146,7 @@ function AuthPage({ mode }) {
               dispatch(setActiveUser({ key: 'Email', value: email }));
               dispatch(setActiveUser({ key: 'UserAvatarType', value: 'text' }));
               dispatch(setActiveUser({ key: 'Friends', value: friendsArray })); 
+              dispatch(setActiveUser({ key: 'userLocation', value: location }));
               dispatch(setIsLoading(false));
       
               Cookies.set('user', JSON.stringify({
@@ -149,7 +154,8 @@ function AuthPage({ mode }) {
                   userName: `${fName} ${lName}`,
                   userEmail: email,
                   UserAvatarType: 'text',
-                  Friends: friendsArray
+                  Friends: friendsArray,
+                  userLocation: location ? location : null
               }), { expires: 7 });
           } catch (error) {
               console.error('Error during signup:', error);

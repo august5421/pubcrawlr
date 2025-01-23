@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Box, Button, Fade, Avatar, Drawer, Typography, Divider } from "@mui/material";
+import { Box, Button, Fade, Avatar, Drawer, Typography, Divider, Badge } from "@mui/material";
 import Font from "./Font";
 import { setActivePage, setShowAuth, setActiveUser, setSelectedBars, setBarResults } from "../actions/actions";
 import Cookies from "js-cookie";
@@ -14,6 +14,7 @@ function Navbar() {
   const showAuth = useSelector((state) => state.showAuth);
   const activeUser = useSelector((state) => state.activeUser);
   const userBarCrawls = useSelector((state) => state.userBarCrawls)
+  const unseenRequests = useSelector((state) => state.unseenRequests)
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const handlePageChange = (page) => {
@@ -122,21 +123,33 @@ function Navbar() {
             </>
           ) : (
             <>
-              {activeUser.UserAvatarType !== 'text' ? (
-                <Avatar2 style={{cursor: "pointer"}} onClick={toggleDrawer(true)} size={40} name={activeUser.UserId} variant={activeUser.UserAvatarType} />
-              ) : (
-                <Avatar
-                  onClick={toggleDrawer(true)}
-                  style={{
-                    cursor: "pointer",
-                    backgroundColor: theme.primary,
-                    color: "white",
+              <Box sx={{position: 'relative'}}>
+                {activeUser.UserAvatarType !== 'text' ? (
+                  <Avatar2 style={{cursor: "pointer"}} onClick={toggleDrawer(true)} size={40} name={activeUser.UserId} variant={activeUser.UserAvatarType} />
+                ) : (
+                  <Avatar
+                    onClick={toggleDrawer(true)}
+                    style={{
+                      cursor: "pointer",
+                      backgroundColor: theme.primary,
+                      color: "white",
+                    }}
+                  >
+                    {stringAvatar(activeUser.Name)}
+                    
+                  </Avatar>
+                )}
+                <Badge
+                  badgeContent={unseenRequests}
+                  color="error"
+                  invisible={unseenRequests === 0}
+                  sx={{
+                    position: 'absolute',
+                    right: 1,
+                    top: 6
                   }}
-                >
-                  {stringAvatar(activeUser.Name)}
-                </Avatar>
-              )}
-              
+                />
+              </Box>
               <Drawer sx={{width: isMobile ? '80%' : '400px'}} anchor="right" open={drawerOpen} onClose={toggleDrawer(false)}>
                 <Box
                   style={{
@@ -177,13 +190,18 @@ function Navbar() {
                     )}
                     <Typography variant="subtitle1"
                       onClick={() => handlePageChange("Account")}
-                      sx={{cursor: 'pointer', marginTop: '15px'}}
+                      sx={{cursor: 'pointer', marginTop: '15px', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}
                       onMouseOver={(e) =>
                           (e.target.style.backgroundColor = "#f5f5f5")
                       }
                       onMouseOut={(e) => (e.target.style.backgroundColor = "white")}
                     >
                         Account & Friends
+                        <Badge
+                          badgeContent={unseenRequests}
+                          color="error"
+                          invisible={unseenRequests === 0}
+                        />
                     </Typography>
                     
                   </Box>

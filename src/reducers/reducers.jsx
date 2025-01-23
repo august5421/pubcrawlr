@@ -8,6 +8,7 @@ const initialState = {
     content: null,
   },
   changeInData: 0,
+  unseenRequests: 0,
   theme: {
     black: '#00171F',
     white: '#FFF',
@@ -111,6 +112,11 @@ const rootReducer = (state = initialState, action) => {
       return {
         ...state,
         userBarCrawls: action.payload,
+      };
+    case 'SET_UNSEEN_REQUESTS':
+      return {
+        ...state,
+        unseenRequests: action.payload,
       };
     case 'SET_ALERT':
       return {
