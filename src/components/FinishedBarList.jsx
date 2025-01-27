@@ -36,10 +36,11 @@ function FinishedBarList({ selectedBarCrawl }) {
         >
             {selectedBarCrawl.barCrawlInfo.map((bar, index) => (
             <Box
-            style={{
+              key={index}
+              style={{
                 display: "flex",
                 flexDirection: "column",
-            }}
+              }}
             >
                 <Box
                     sx={{

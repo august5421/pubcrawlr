@@ -7,13 +7,11 @@ import {
   Button,
   Card,
   CardContent,
-  CardMedia,
-  IconButton
+  CardMedia
 } from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
 import { setSelectedBars } from "../actions/actions";
 
-function BarCard({ bar, index, mode }) {
+function BarCard({ bar, index, mode, isActive }) {
   const dispatch = useDispatch();
   const theme = useSelector((state) => state.theme);
   const isMobile = useSelector((state) => state.isMobile);
@@ -96,6 +94,7 @@ function BarCard({ bar, index, mode }) {
             paddingLeft: "0px",
             paddingRight: "0px",
             borderBottom: "1px solid rgba(0, 0, 0, 0.1)",
+            backgroundColor: isActive ? "#36b8f5" : "inherit"
           }}
         >
           

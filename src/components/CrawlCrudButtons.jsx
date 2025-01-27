@@ -2,9 +2,10 @@ import { db } from '../config/Firebase';
 import { doc, deleteDoc } from 'firebase/firestore';
 import { Box, Typography, Button, CircularProgress } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
-import { setActivePage, setIsLoading, setModal, setChangeInData, setAlert } from '../actions/actions';
+import { setIsLoading, setModal, setChangeInData, setAlert } from '../actions/actions';
 import Font from './Font';
 import { convertToLatLngLiteral } from '../functions/functions';
+import { useNavigate } from 'react-router-dom';
 
 function CrawlCrudButtons({ crawl, mapInstance, setSelectedBarCrawl, setExpanded }) {
   const dispatch = useDispatch();
@@ -15,6 +16,7 @@ function CrawlCrudButtons({ crawl, mapInstance, setSelectedBarCrawl, setExpanded
   const location = useSelector((state) => state.location);
   const userBarCrawls = useSelector((state) => state.userBarCrawls);
   const changeInData = useSelector((state) => state.changeInData);
+  const navigate = useNavigate();
 
   const handleDeleteCrawl = (crawl) => {
     dispatch(setIsLoading(true))
@@ -76,13 +78,7 @@ function CrawlCrudButtons({ crawl, mapInstance, setSelectedBarCrawl, setExpanded
                 } catch (error) {
                   dispatch(setAlert({ open: true, severity: 'error', message: ("Error deleting bar crawl: " + error) }));
                 } finally {
-                    if (userBarCrawls.length === 1) {
-                      dispatch(setActivePage("In", false));
-                      setTimeout(() => {
-                        dispatch(setActivePage("In", true));
-                        dispatch(setActivePage("Name", "App"));
-                      }, 375);
-                    }
+                    navigate('/');
                 }
               }}
               

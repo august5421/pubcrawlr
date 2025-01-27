@@ -1,28 +1,30 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux';
-import { db } from './config/Firebase';
 import { Box } from '@mui/system';
 import Navbar from './components/Navbar';
 import MainPage from './pages/MainPage';
 import AuthPage from './pages/AuthPage';
-import { Alert, Fade, Snackbar, Modal, Typography, Button } from '@mui/material';
+import { Alert, Fade, Snackbar, Modal, Typography } from '@mui/material';
 import { setActiveUser, setAlert, setUserBarCrawls, setModal, setIsLoading, setUnseenRequests } from './actions/actions';
 import Cookies from 'js-cookie';
 import AccountPage from './pages/AccountPage';
-import CrawlPage from './pages/CrawlPage';
-import Font from './components/Font';
+import MyCrawlsPage from './pages/MyCrawlsPage';
+import SingleCrawlPage from './pages/SingleCrawlPage';
+import { Routes, Route } from 'react-router-dom';
+import { getAllBarCrawlsForUser } from './services/BarCrawlService';
+import { getFriendsData } from './services/FriendsService';
 
 function App() {
   const dispatch = useDispatch();
   const theme = useSelector((state) => state.theme);
   const isMobile = useSelector((state) => state.isMobile);
   const activeUser = useSelector((state) => state.activeUser);
-  const activePage = useSelector((state) => state.activePage); 
   const alert = useSelector((state) => state.alert); 
   const changeInData = useSelector((state) => state.changeInData); 
   const modalState = useSelector((state) => state.modalState);
   const unseenRequests = useSelector((state) => state.unseenRequests);
   const location = useSelector((state) => state.location);
+  const userBarCrawls = useSelector((state) => state.userBarCrawls);
 
   useEffect(()=>{console.log(location)}, [location])
   
@@ -44,31 +46,18 @@ function App() {
     }
   }, []);
   
+  // load friends and user crawls
   useEffect(() => {
-    const fetchUserBarCrawls = async () => {
-      if (!activeUser?.UserId) return;
-      try {
-        const adminQuery = db.collection('BarCrawls').where('admins', 'array-contains', activeUser.UserId);
-        const adminSnapshot = await adminQuery.get();
-        const adminCrawls = adminSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const inviteeQuery = db.collection('BarCrawls').where('invitees', 'array-contains', activeUser.UserId);
-        const inviteeSnapshot = await inviteeQuery.get();
-        const inviteeCrawls = inviteeSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const allCrawls = [...adminCrawls, ...inviteeCrawls.filter(crawl => !adminCrawls.some(admin => admin.id === crawl.id))];
-        const friendsQuery = db.collection('Friends').where('UserId', '==', activeUser.UserId);
-        const friendsSnapshot = await friendsQuery.get();
-        const friendsData = friendsSnapshot.docs.map(doc => doc.data().Friends);
-        const unseenCount = friendsData[0]?.filter(friend => friend.Seen === false && friend.RequestedBy === friend.friendId);
-        dispatch(setUnseenRequests(unseenCount?.length))
-        dispatch(setActiveUser({ key: 'Friends', value: friendsData }));
-        dispatch(setUserBarCrawls(allCrawls));
-      } catch (error) {
-        console.error('Error fetching user bar crawls:', error);
-        dispatch(setAlert({ open: true, message: 'Failed to fetch bar crawls.', severity: 'error' }));
-      }
-    };
+    if (!activeUser?.UserId) return;
+
+    getFriendsData(activeUser.UserId).then((response) => {
+      dispatch(setUnseenRequests(response.unseenCount?.length))
+      dispatch(setActiveUser({ key: 'Friends', value: response.friendsData }));
+    });
   
-    fetchUserBarCrawls();
+    getAllBarCrawlsForUser(activeUser.UserId).then((response) => {
+      dispatch(setUserBarCrawls(response));
+    });
   }, [activeUser?.UserId, changeInData, dispatch]);
 
   const handleClose = (_, reason) => {
@@ -80,13 +69,16 @@ function App() {
     <Box style={{position: 'absolute', top: 0, left: 0, bottom: 0, right: 0, display: 'flex', flexDirection: 'column', backgroundColor: theme.black, overflow: 'hidden'}}>
       <Navbar />
       <Box style={{display: 'flex', height: 'calc(100vh - 50px)', width: '100%'}}>
-        <Fade in={activePage.In}>
+        <Fade in={true}>
           <Box style={{width: '100%'}}>
-            {activePage.Name == 'App' && (<MainPage />)}
-            {activePage.Name === 'Login' && <AuthPage mode="login" />}
-            {activePage.Name === 'Signup' && <AuthPage mode="signup" />}
-            {activePage.Name === 'Account' && <AccountPage />}
-            {activePage.Name === 'Crawls' && <CrawlPage />}
+            <Routes>
+              <Route path="/" element={ <MainPage /> } />
+              <Route path="/Login" element={ <AuthPage mode="login" /> } />
+              <Route path="/Signup" element={ <AuthPage mode="signup" /> } />
+              <Route path="/Account" element={ <AccountPage /> } />
+              <Route path="/Crawls" element={ <MyCrawlsPage userBarCrawls={userBarCrawls} />} />
+              <Route path="/Crawl/:slug" element={ <SingleCrawlPage />} />
+            </Routes>
           </Box>
         </Fade>
       </Box>

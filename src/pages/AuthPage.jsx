@@ -6,8 +6,10 @@ import { setDoc, getDoc, doc } from 'firebase/firestore';
 import Font from '../components/Font.jsx';
 import { darkenColor } from '../functions/functions.jsx';
 import { useDispatch, useSelector } from 'react-redux';
-import { setShowAuth, setActivePage, setActiveUser, setAlert, setIsLoading } from '../actions/actions.jsx';
+import { setShowAuth, setActiveUser, setAlert, setIsLoading } from '../actions/actions.jsx';
 import Cookies from 'js-cookie';
+import { useNavigate } from 'react-router-dom';
+import { NavLink } from "react-router-dom";
 
 function AuthPage({ mode }) {
   const dispatch = useDispatch();
@@ -15,6 +17,7 @@ function AuthPage({ mode }) {
   const isMobile = useSelector((state) => state.isMobile);
   const isLoading = useSelector((state) => state.isLoading);
   const location = useSelector((state) => state.location);
+  const navigate = useNavigate();
   
   const [formState, setFormState] = useState({
     fName: '',
@@ -166,10 +169,8 @@ function AuthPage({ mode }) {
       
   
         dispatch(setShowAuth(true));
-        dispatch(setActivePage('In', false));
         setTimeout(() => {
-          dispatch(setActivePage('In', true));
-          dispatch(setActivePage('Name', 'App'));
+          navigate('/');
         }, 375);
       } catch (error) {
         dispatch(setAlert({ open: true, severity: 'error', message: 'Incorrect email or password' }))
@@ -186,14 +187,6 @@ function AuthPage({ mode }) {
       }
     }
   };
-
-  const switchAuthMode = (mode) => {
-    dispatch(setActivePage('In', false));
-    setTimeout(() => {
-      dispatch(setActivePage('In', true));
-      dispatch(setActivePage('Name', mode));
-    }, 375);
-  }
 
   const togglePasswordVisibility = () => {
     setFormState((prevState) => ({
@@ -337,7 +330,7 @@ function AuthPage({ mode }) {
         >
           {!isLoading ? (mode === 'login' ? (!forgotPw ? 'Login' : 'Forgot Password') : 'Sign Up') : (<CircularProgress size="25px" sx={{ color: theme.white }} />)}
         </Button>
-        <Box onClick={() => {switchAuthMode(mode === 'login' ? 'Signup' : 'Login')}} style={{color: theme.primary, marginTop: '15px', cursor: 'pointer'}}>
+        <Box onClick={() => {mode === 'login' ? navigate('/Signup') : navigate('/Login')}} style={{color: theme.primary, marginTop: '15px', cursor: 'pointer'}}>
           <Font
             text={mode === 'login' ? 'Need an account? Sign Up!' : 'Already have an account? Login!'}
             color={theme.primary}

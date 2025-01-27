@@ -6,6 +6,7 @@ import rootReducer from './reducers/reducers';
 import App from './App';
 import './main.css'
 import MobileDetector from './components/MobileDetector';
+import { BrowserRouter } from 'react-router-dom';
 
 const store = createStore(rootReducer);
 
@@ -15,6 +16,8 @@ const rootElement = ReactDOM.createRoot(root);
 rootElement.render(
   <Provider store={store}>
       <MobileDetector />
-      <App />
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
   </Provider>
 );

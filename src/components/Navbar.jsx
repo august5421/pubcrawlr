@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Box, Button, Fade, Avatar, Drawer, Typography, Divider, Badge } from "@mui/material";
 import Font from "./Font";
-import { setActivePage, setShowAuth, setActiveUser, setSelectedBars, setBarResults } from "../actions/actions";
+import { setShowAuth, setActiveUser, setSelectedBars, setBarResults, setBarResultsInBounds } from "../actions/actions";
 import Cookies from "js-cookie";
 import { stringAvatar, darkenColor } from '../functions/functions';
 import Avatar2 from "boring-avatars";
+import { NavLink } from "react-router-dom";
+import { useNavigate } from 'react-router-dom';
 
 function Navbar() {
   const dispatch = useDispatch();
@@ -16,20 +18,7 @@ function Navbar() {
   const userBarCrawls = useSelector((state) => state.userBarCrawls)
   const unseenRequests = useSelector((state) => state.unseenRequests)
   const [drawerOpen, setDrawerOpen] = useState(false);
-
-  const handlePageChange = (page) => {
-    setDrawerOpen(false);
-    if (page !== "Login" || page !== "Signup") {
-      dispatch(setShowAuth(true));
-    } else {
-      dispatch(setShowAuth(false));
-    }
-    dispatch(setActivePage("In", false));
-    setTimeout(() => {
-      dispatch(setActivePage("In", true));
-      dispatch(setActivePage("Name", page));
-    }, 375);
-  };
+  const navigate = useNavigate();
 
   const handleLogout = () => {
     Cookies.remove("user");
@@ -40,13 +29,10 @@ function Navbar() {
     dispatch(setActiveUser({ key: "UserAvatarType", value: "" }));
     dispatch(setSelectedBars([]))
     dispatch(setBarResults([]))
+    dispatch(setBarResultsInBounds([]))
     dispatch(setShowAuth(false));
-    dispatch(setActivePage("In", false));
-    setTimeout(() => {
-      dispatch(setActivePage("In", true));
-      dispatch(setActivePage("Name", "Login"));
-    }, 375);
     setDrawerOpen(false);
+    navigate('/');
   };
 
   const toggleDrawer = (open) => () => {
@@ -67,15 +53,9 @@ function Navbar() {
         backgroundColor: theme.white,
       }}
     >
-      <Box style={{ cursor: "pointer" }} onClick={() => handlePageChange("App")}>
-        <Font
-          text="Pubcrawlr"
-          color={theme.primary}
-          variant="h4"
-          weight="bold"
-          fontFamily="PrimaryOrig"
-        />
-      </Box>
+      <NavLink style={{ cursor: "pointer" }} to="/">
+        <Font text="Pubcrawlr" color={theme.primary} variant="h4" weight="bold" fontFamily="PrimaryOrig"/>
+      </NavLink>
       <Fade in={showAuth}>
         <Box style={{ display: "flex", gap: "10px", alignItems: "center" }}>
           {activeUser.UserId === "" ? (
@@ -90,14 +70,12 @@ function Navbar() {
                   padding: "5px 20px",
                   textTransform: "none",
                 }}
-                onClick={() => handlePageChange("Login")}
-                onMouseOver={(e) =>
-                    (e.target.style.backgroundColor = "#f5f5f5")
-                }
+                onMouseOver={(e) => (e.target.style.backgroundColor = "#f5f5f5")}
                 onMouseOut={(e) => (e.target.style.backgroundColor = "white")}
               >
-                Login
+                <NavLink to="/Login">Login</NavLink>
               </Button>
+
               <Button
                 variant="contained"
                 style={{
@@ -107,18 +85,10 @@ function Navbar() {
                   padding: "5px 20px",
                   textTransform: "none",
                 }}
-                onClick={() => handlePageChange("Signup")}
-                onMouseOver={(e) =>
-                    (e.target.style.backgroundColor = darkenColor(
-                        theme.primary,
-                        0.1
-                    ))
-                }
-                onMouseOut={(e) =>
-                    (e.target.style.backgroundColor = theme.primary)
-                }
+                onMouseOver={(e) => (e.target.style.backgroundColor = darkenColor(theme.primary, 0.1))}
+                onMouseOut={(e) => (e.target.style.backgroundColor = theme.primary)}
               >
-                Sign Up
+                <NavLink to="/Signup">Sign Up</NavLink>
               </Button>
             </>
           ) : (
@@ -167,41 +137,28 @@ function Navbar() {
                     </Typography>
                     <Divider />
                     <Typography variant="subtitle1"
-                      onClick={() => handlePageChange("App")}
                       sx={{cursor: 'pointer', marginTop: '15px'}}
-                      onMouseOver={(e) =>
-                          (e.target.style.backgroundColor = "#f5f5f5")
-                      }
+                      onMouseOver={(e) => (e.target.style.backgroundColor = "#f5f5f5")}
                       onMouseOut={(e) => (e.target.style.backgroundColor = "white")}
                     >
-                        Create A Crawl
+                        <NavLink to="/">Create A Crawl</NavLink>
                     </Typography>
                     {userBarCrawls.length > 0 && (
                       <Typography variant="subtitle1"
-                        onClick={() => handlePageChange("Crawls")}
                         sx={{cursor: 'pointer', marginTop: '15px'}}
-                        onMouseOver={(e) =>
-                            (e.target.style.backgroundColor = "#f5f5f5")
-                        }
+                        onMouseOver={(e) => (e.target.style.backgroundColor = "#f5f5f5")}
                         onMouseOut={(e) => (e.target.style.backgroundColor = "white")}
                       >
-                          My Crawls
+                          <NavLink to="/Crawls">My Crawls</NavLink>
                       </Typography>
                     )}
                     <Typography variant="subtitle1"
-                      onClick={() => handlePageChange("Account")}
                       sx={{cursor: 'pointer', marginTop: '15px', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}
-                      onMouseOver={(e) =>
-                          (e.target.style.backgroundColor = "#f5f5f5")
-                      }
+                      onMouseOver={(e) => (e.target.style.backgroundColor = "#f5f5f5")}
                       onMouseOut={(e) => (e.target.style.backgroundColor = "white")}
                     >
-                        Account & Friends
-                        <Badge
-                          badgeContent={unseenRequests}
-                          color="error"
-                          invisible={unseenRequests === 0}
-                        />
+                        <NavLink to="/Account">Account & Friends</NavLink>
+                        <Badge badgeContent={unseenRequests} color="error" invisible={unseenRequests === 0} />
                     </Typography>
                     
                   </Box>
