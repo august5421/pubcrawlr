@@ -35,21 +35,6 @@ function MainPage() {
   const [map, setMap] = useState(null);
   const [directions, setDirections] = useState(null);
 
-  //get user location
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          dispatch(setLocation({ latitude, longitude }));
-        },
-        (error) => {
-          console.error("Error getting location:", error);
-        }
-      );
-    }
-  }, []);
-
   //render map
   useEffect(() => {
     if (!mapLoaded && location) {
@@ -62,12 +47,6 @@ function MainPage() {
         zoom: 14
       });
       newMap.addControl(new maplibregl.NavigationControl(), 'top-right');
-      newMap.on('load', async () => {
-        newMap.loadImage(mapPin).then((image) => {
-          newMap.addImage('custom-marker', image.data);
-        });
-      });
-
       setMap(newMap);
       initializeGoogleApi();
     }
@@ -163,7 +142,6 @@ function MainPage() {
       map.addControl(new LoadingIndicatorControl(newDirections));
       setDirections(newDirections);
 
-
       // add bar result markers
       barResults.forEach((x) => {
         const photoUrl = x.photos?.[0]?.getUrl({
@@ -201,7 +179,6 @@ function MainPage() {
             }
           }
         });
-
       });
 
       // zoom to fit results
@@ -223,7 +200,6 @@ function MainPage() {
       setMap(newMap);
     }
   }, [mapLoaded, location, nearbyLoaded]);
-
 
   const handleUseLocation = () => {
     if (navigator.geolocation) {

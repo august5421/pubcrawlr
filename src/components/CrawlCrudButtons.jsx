@@ -1,25 +1,19 @@
-import { db } from '../config/Firebase';
-import { doc, deleteDoc } from 'firebase/firestore';
 import { Box, Typography, Button, CircularProgress } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import { setIsLoading, setModal, setChangeInData, setAlert } from '../actions/actions';
 import Font from './Font';
-import { convertToLatLngLiteral } from '../functions/functions';
 import { useNavigate } from 'react-router-dom';
+import { deleteBarCrawl } from '../services/BarCrawlService';
 
-function CrawlCrudButtons({ crawl, mapInstance, setSelectedBarCrawl, setExpanded }) {
+function CrawlCrudButtons({ crawl, setSelectedBarCrawl, setExpanded }) {
   const dispatch = useDispatch();
   const theme = useSelector((state) => state.theme);
-  const isMobile = useSelector((state) => state.isMobile);
   const isLoading = useSelector((state) => state.isLoading);
-  const isLarge = useSelector((state) => state.isLarge);
-  const location = useSelector((state) => state.location);
-  const userBarCrawls = useSelector((state) => state.userBarCrawls);
   const changeInData = useSelector((state) => state.changeInData);
   const navigate = useNavigate();
 
   const handleDeleteCrawl = (crawl) => {
-    dispatch(setIsLoading(true))
+    dispatch(setIsLoading(true));
     dispatch(
       setModal(
         true,
@@ -52,36 +46,16 @@ function CrawlCrudButtons({ crawl, mapInstance, setSelectedBarCrawl, setExpanded
               variant="contained"
               color="error"
               onClick={async () => {
-                try {
-                  await deleteDoc(doc(db, "BarCrawls", crawl.id));
+                deleteBarCrawl(crawl.id).then(() => {
                   setExpanded(null);
-                  if (mapInstance.current) {
-                    mapInstance.current.markers?.forEach((marker) => marker.setMap(null));
-                    mapInstance.current.markers = [];
-                  }
-              
-                  if (mapInstance.current) {
-                    mapInstance.current.setCenter(convertToLatLngLiteral(location));
-                    mapInstance.current.setZoom(14); 
-                  }
-              
-                  if (mapInstance.current.directionsRenderer) {
-                    mapInstance.current.directionsRenderer.setMap(null);
-                    mapInstance.current.directionsRenderer = null;
-                  }
-
                   setSelectedBarCrawl([])
                   dispatch(setChangeInData(changeInData + 1));
                   dispatch(setModal(false, null));
                   dispatch(setAlert({ open: true, severity: 'success', message: 'Bar crawl deleted successfully!' }));
                   dispatch(setIsLoading(false));
-                } catch (error) {
-                  dispatch(setAlert({ open: true, severity: 'error', message: ("Error deleting bar crawl: " + error) }));
-                } finally {
-                    navigate('/');
-                }
+                  navigate('/');
+                });
               }}
-              
             >
               Delete
             </Button>
@@ -90,7 +64,8 @@ function CrawlCrudButtons({ crawl, mapInstance, setSelectedBarCrawl, setExpanded
               color="primary"
               onClick={() => {
                 dispatch(setIsLoading(false))
-                dispatch(setModal(false, null))}}
+                dispatch(setModal(false, null))
+              }}
             >
               Cancel
             </Button>
@@ -102,22 +77,22 @@ function CrawlCrudButtons({ crawl, mapInstance, setSelectedBarCrawl, setExpanded
 
   return (
     <Box style={{ display: "flex", flexDirection: "row", justifyContent: "space-around" }}>
-    <Box style={{ display: "flex", flexDirection: "column" }}>
+      <Box style={{ display: "flex", flexDirection: "column" }}>
         <Button variant="contained" color="primary">
-        Start
+          Start
         </Button>
-    </Box>
-    <Box style={{ display: "flex", flexDirection: "column" }}>
+      </Box>
+      <Box style={{ display: "flex", flexDirection: "column" }}>
         <Button variant="contained" color="secondary">
-        Edit
+          Edit
         </Button>
-    </Box>
-    <Box style={{ display: "flex", flexDirection: "column" }}>
+      </Box>
+      <Box style={{ display: "flex", flexDirection: "column" }}>
         <Button variant="contained" color="error" onClick={() => handleDeleteCrawl(crawl)}>
-        {!isLoading ? ('Delete') : (<CircularProgress size="25px" sx={{ color: theme.white }} />)}
+          {!isLoading ? ('Delete') : (<CircularProgress size="25px" sx={{ color: theme.white }} />)}
         </Button>
+      </Box>
     </Box>
-    </Box>  
   );
 }
 

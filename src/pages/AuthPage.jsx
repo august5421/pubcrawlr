@@ -1,15 +1,13 @@
 import { useState } from 'react';
-import { Box, TextField, Button, InputAdornment, IconButton, Snackbar, Alert, CircularProgress  } from '@mui/material';
+import { Box, TextField, Button, InputAdornment, IconButton, CircularProgress } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
-import { auth, db } from '../config/Firebase.jsx';
-import { setDoc, getDoc, doc } from 'firebase/firestore'; 
 import Font from '../components/Font.jsx';
 import { darkenColor } from '../functions/functions.jsx';
 import { useDispatch, useSelector } from 'react-redux';
 import { setShowAuth, setActiveUser, setAlert, setIsLoading } from '../actions/actions.jsx';
 import Cookies from 'js-cookie';
 import { useNavigate } from 'react-router-dom';
-import { NavLink } from "react-router-dom";
+import { signIn, getUser, getFriendsForUser, createUser, sendPasswordReset } from '../services/AuthenticationService.jsx';
 
 function AuthPage({ mode }) {
   const dispatch = useDispatch();
@@ -18,7 +16,7 @@ function AuthPage({ mode }) {
   const isLoading = useSelector((state) => state.isLoading);
   const location = useSelector((state) => state.location);
   const navigate = useNavigate();
-  
+
   const [formState, setFormState] = useState({
     fName: '',
     lName: '',
@@ -41,10 +39,10 @@ function AuthPage({ mode }) {
   const validateFields = () => {
     const { email, password, confirmPassword, fName, lName } = formState;
     let missingFields = [];
-    
+
     if (!email) missingFields.push('Email');
     if (!password && !forgotPw) missingFields.push('Password');
-    
+
     if (mode === 'signup') {
       if (!fName) missingFields.push('First Name');
       if (!lName) missingFields.push('Last Name');
@@ -68,6 +66,24 @@ function AuthPage({ mode }) {
     return true;
   };
 
+  const updateUserState = (name, userId, email, avatarType, friendsArray, userLocation,) => {
+    dispatch(setActiveUser({ key: 'Name', value: name }));
+    dispatch(setActiveUser({ key: 'UserId', value: userId }));
+    dispatch(setActiveUser({ key: 'Email', value: email }));
+    dispatch(setActiveUser({ key: 'UserAvatarType', value: avatarType }));
+    dispatch(setActiveUser({ key: 'Friends', value: friendsArray }));
+    dispatch(setActiveUser({ key: 'userLocation', userLocation }));
+    dispatch(setIsLoading(false));
+
+    Cookies.set('user', JSON.stringify({
+      userId: userId,
+      userName: name,
+      userEmail: email,
+      UserAvatarType: avatarType,
+      Friends: friendsArray,
+      userLocation: userLocation ? userLocation : null
+    }), { expires: 7 });
+  };
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -76,98 +92,34 @@ function AuthPage({ mode }) {
     if (!forgotPw) {
       try {
         const { email, password, confirmPassword, fName, lName } = formState;
-        let user;
-  
+
         if (mode === 'login') {
-          const userCredential = await auth.signInWithEmailAndPassword(email, password);
-          user = userCredential.user;
-  
-          const userDocRef = doc(db, 'Users', user.uid);
-          const userDoc = await getDoc(userDocRef);
-  
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            const friendsDocRef = doc(db, 'Friends', user.uid);
-            const friendsDoc = await getDoc(friendsDocRef);
-            let friendsArray = [];
-            if (friendsDoc.exists()) {
-                friendsArray = friendsDoc.data().Friends || [];
-            }
-            dispatch(setActiveUser({ key: 'Name', value: `${userData.UserFirstName} ${userData.UserLastName}` }));
-            dispatch(setActiveUser({ key: 'UserId', value: user.uid }));
-            dispatch(setActiveUser({ key: 'Email', value: userData.UserEmail }));
-            dispatch(setActiveUser({ key: 'UserAvatarType', value: userData.UserAvatarType }));
-            dispatch(setActiveUser({ key: 'Friends', value: friendsArray }));
-            dispatch(setActiveUser({ key: 'userLocation', value: userData.userLocation }));
-            dispatch(setIsLoading(false))
-  
-            Cookies.set('user', JSON.stringify({
-              userId: user.uid,
-              userName: `${userData.UserFirstName} ${userData.UserLastName}`,
-              userEmail: userData.UserEmail,
-              UserAvatarType: userData.UserAvatarType,
-              Friends: friendsArray,
-              userLocation: location ? location : null
-            }), { expires: 7 });
+          const user = await signIn(email, password);
+          const userData = await getUser(user.uid);
+
+          if (userData) {
+            const friendsArray = await getFriendsForUser(user.uid);
+            updateUserState(`${userData.UserFirstName} ${userData.UserLastName}`, user.uid, userData.email, userData.UserAvatarType, friendsArray, userData.userLocation);
           } else {
             console.log('No such user data found in Firestore!');
             dispatch(setIsLoading(false))
           }
         } else if (mode === 'signup') {
           if (password !== confirmPassword) {
-              dispatch(setAlert({ open: true, severity: 'error', message: 'Passwords do not match.' }));
-              dispatch(setIsLoading(false));
-              return;
+            dispatch(setAlert({ open: true, severity: 'error', message: 'Passwords do not match.' }));
+            dispatch(setIsLoading(false));
+            return;
           }
-      
+
           try {
-              const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-              const user = userCredential.user;
-      
-              await setDoc(doc(db, 'Users', user.uid), {
-                  UserEmail: email,
-                  UserFirstName: fName,
-                  UserLastName: lName,
-                  UserAvatarType: 'text',
-                  CreateDate: new Date(),
-                  userLocation: location ? location : null
-              });
-      
-              await setDoc(doc(db, 'Friends', user.uid), {
-                  UserId: user.uid,
-              });
-      
-              const friendsDocRef = doc(db, 'Friends', user.uid);
-              const friendsDocSnap = await getDoc(friendsDocRef);
-              let friendsArray = [];
-              if (friendsDocSnap.exists()) {
-                  friendsArray = friendsDocSnap.data().Friends || [];
-              }
-      
-              dispatch(setActiveUser({ key: 'Name', value: `${fName} ${lName}` }));
-              dispatch(setActiveUser({ key: 'UserId', value: user.uid }));
-              dispatch(setActiveUser({ key: 'Email', value: email }));
-              dispatch(setActiveUser({ key: 'UserAvatarType', value: 'text' }));
-              dispatch(setActiveUser({ key: 'Friends', value: friendsArray })); 
-              dispatch(setActiveUser({ key: 'userLocation', value: location }));
-              dispatch(setIsLoading(false));
-      
-              Cookies.set('user', JSON.stringify({
-                  userId: user.uid,
-                  userName: `${fName} ${lName}`,
-                  userEmail: email,
-                  UserAvatarType: 'text',
-                  Friends: friendsArray,
-                  userLocation: location ? location : null
-              }), { expires: 7 });
+            const user = await createUser(email, password);
+            const friendsArray = await getFriendsForUser(user.uid)
+            updateUserState(`${fName} ${lName}`, user.uid, email, 'text', friendsArray, location);
           } catch (error) {
-              console.error('Error during signup:', error);
-              dispatch(setAlert({ open: true, severity: 'error', message: error.message }));
-              dispatch(setIsLoading(false));
+            dispatch(setIsLoading(false));
           }
-      }
-      
-  
+        }
+
         dispatch(setShowAuth(true));
         setTimeout(() => {
           navigate('/');
@@ -178,11 +130,10 @@ function AuthPage({ mode }) {
       }
     } else {
       try {
-        await auth.sendPasswordResetEmail(formState.email);
+        await sendPasswordReset(formState.email);
         dispatch(setAlert({ open: true, severity: 'success', message: 'Passwords reset email sent successfully. Please check your email for further instructions.' }))
         dispatch(setIsLoading(false))
       } catch (error) {
-        dispatch(setAlert({ open: true, severity: 'error', message: 'Error sending password reset email. Please try again.' }))
         dispatch(setIsLoading(false))
       }
     }
@@ -221,7 +172,7 @@ function AuthPage({ mode }) {
               margin="normal"
               value={formState.fName}
               size="small"
-              
+
               onChange={handleInputChange('fName')}
             />
             <TextField
@@ -231,7 +182,7 @@ function AuthPage({ mode }) {
               margin="normal"
               value={formState.lName}
               size="small"
-              
+
               onChange={handleInputChange('lName')}
             />
           </>
@@ -243,7 +194,7 @@ function AuthPage({ mode }) {
           margin="normal"
           value={formState.email}
           size="small"
-          
+
           onChange={handleInputChange('email')}
         />
         {!forgotPw && (
@@ -254,7 +205,7 @@ function AuthPage({ mode }) {
             fullWidth
             margin="normal"
             size="small"
-            
+
             value={formState.password}
             onChange={handleInputChange('password')}
             InputProps={{
@@ -295,7 +246,7 @@ function AuthPage({ mode }) {
             fullWidth
             margin="normal"
             size="small"
-            
+
             value={formState.confirmPassword}
             onChange={handleInputChange('confirmPassword')}
             InputProps={{
@@ -309,7 +260,7 @@ function AuthPage({ mode }) {
             }}
           />
         )}
-        
+
         <Button
           type="submit"
           variant="contained"
@@ -330,7 +281,7 @@ function AuthPage({ mode }) {
         >
           {!isLoading ? (mode === 'login' ? (!forgotPw ? 'Login' : 'Forgot Password') : 'Sign Up') : (<CircularProgress size="25px" sx={{ color: theme.white }} />)}
         </Button>
-        <Box onClick={() => {mode === 'login' ? navigate('/Signup') : navigate('/Login')}} style={{color: theme.primary, marginTop: '15px', cursor: 'pointer'}}>
+        <Box onClick={() => { mode === 'login' ? navigate('/Signup') : navigate('/Login') }} style={{ color: theme.primary, marginTop: '15px', cursor: 'pointer' }}>
           <Font
             text={mode === 'login' ? 'Need an account? Sign Up!' : 'Already have an account? Login!'}
             color={theme.primary}

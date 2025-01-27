@@ -30,13 +30,13 @@ function BarCrawlOrganizer() {
   const isLarge = useSelector((state) => state.isLarge);
   const isLoading = useSelector((state) => state.isLoading);
   const selectedBars = useSelector((state) => state.selectedBars);
-  const changeInData = useSelector((state) => state.changeInData); 
+  const changeInData = useSelector((state) => state.changeInData);
   const activeUser = useSelector((state) => state.activeUser);
 
   const [barCrawlName, setBarCrawlName] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const navigate = useNavigate();
-  
+
   const handleDelete = (place_id) => {
     const updatedBars = selectedBars.filter((bar) => bar.place_id !== place_id);
     dispatch(setSelectedBars(updatedBars));
@@ -58,7 +58,7 @@ function BarCrawlOrganizer() {
   const handleSaveCrawl = async () => {
     dispatch(setIsLoading(true))
     if (!activeUser.UserId) {
-      dispatch(setModal(true, 
+      dispatch(setModal(true,
         <Box
           sx={{
             position: "absolute",
@@ -85,34 +85,34 @@ function BarCrawlOrganizer() {
           </Typography>
           <Box sx={{ display: "flex", gap: 2, justifyContent: "center" }}>
             <Button
-                variant="outlined"
-                style={{
-                  borderRadius: "50px",
-                  backgroundColor: "#d3d3d3",
-                  color: theme.primary,
-                  border: `1px solid transparent`,
-                  padding: "5px 20px",
-                  textTransform: "none",
-                }}
-                onMouseOver={(e) => (e.target.style.backgroundColor = "#f5f5f5")}
-                onMouseOut={(e) => (e.target.style.backgroundColor = "#d3d3d3")}
-              >
-                <NavLink to="/Login">Login</NavLink>
-              </Button>
-              <Button
-                variant="contained"
-                style={{
-                  borderRadius: "50px",
-                  backgroundColor: theme.primary,
-                  color: "white",
-                  padding: "5px 20px",
-                  textTransform: "none",
-                }}
-                onMouseOver={(e) => (e.target.style.backgroundColor = darkenColor(theme.primary, 0.1))}
-                onMouseOut={(e) => (e.target.style.backgroundColor = theme.primary)}
-              >
-                <NavLink to="/Signup">Sign Up</NavLink>
-              </Button>
+              variant="outlined"
+              style={{
+                borderRadius: "50px",
+                backgroundColor: "#d3d3d3",
+                color: theme.primary,
+                border: `1px solid transparent`,
+                padding: "5px 20px",
+                textTransform: "none",
+              }}
+              onMouseOver={(e) => (e.target.style.backgroundColor = "#f5f5f5")}
+              onMouseOut={(e) => (e.target.style.backgroundColor = "#d3d3d3")}
+            >
+              <NavLink to="/Login">Login</NavLink>
+            </Button>
+            <Button
+              variant="contained"
+              style={{
+                borderRadius: "50px",
+                backgroundColor: theme.primary,
+                color: "white",
+                padding: "5px 20px",
+                textTransform: "none",
+              }}
+              onMouseOver={(e) => (e.target.style.backgroundColor = darkenColor(theme.primary, 0.1))}
+              onMouseOut={(e) => (e.target.style.backgroundColor = theme.primary)}
+            >
+              <NavLink to="/Signup">Sign Up</NavLink>
+            </Button>
           </Box>
         </Box>
       ))
@@ -131,7 +131,7 @@ function BarCrawlOrganizer() {
       }
     }
   };
-  
+
 
   return (
     <>
@@ -403,7 +403,7 @@ function BarCrawlOrganizer() {
           </Drawer>
         </>
       )}
-      
+
     </>
   );
 }
