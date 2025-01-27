@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Box, List, Divider, TextField, Button } from "@mui/material";
-import { haversineDistance, getWalkingTime } from "../functions/functions";
+import { haversineDistance, getMarkerHTML } from "../functions/functions";
 import { setBarResults, setBarResultsInBounds, setLocation, setSelectedBars } from "../actions/actions";
 import userPin from "../../public/assets/images/personPin.png";
 import mapPin from "../../public/assets/images/noPersonPin.png";
@@ -12,6 +12,7 @@ import BarCrawlOrganizer from "../components/BarCrawlOrganizer";
 import VibeChecker from "../components/VibeChecker";
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import MapLibreGlDirections, { LoadingIndicatorControl } from "@maplibre/maplibre-gl-directions";
 
 function MainPage() {
   const dispatch = useDispatch();
@@ -32,7 +33,8 @@ function MainPage() {
     "bar OR pub OR drinks OR cocktails"
   );
   const [map, setMap] = useState(null);
-  
+  const [directions, setDirections] = useState(null);
+
   //get user location
   useEffect(() => {
     if (navigator.geolocation) {
@@ -144,7 +146,7 @@ function MainPage() {
     }
   }, [mapLoaded, location, vibeSearch, locationReq]);
 
-//  map pins out
+  //  map pins out
   useEffect(() => {
     if (mapLoaded && location && nearbyLoaded) {
       const newMap = map;
@@ -152,8 +154,15 @@ function MainPage() {
       new maplibregl.Marker({
         color: "#42f55a"
       }).setLngLat([location.longitude, location.latitude]).addTo(newMap);
-      
+
       let bounds = new maplibregl.LngLatBounds();
+
+      const newDirections = new MapLibreGlDirections(newMap, {
+        profile: 'foot'
+      });
+      map.addControl(new LoadingIndicatorControl(newDirections));
+      setDirections(newDirections);
+
 
       // add bar result markers
       barResults.forEach((x) => {
@@ -168,17 +177,9 @@ function MainPage() {
           color: '#36b8f5',
           className: 'marker'
         }).setLngLat([x.geometry.location.lng(), x.geometry.location.lat()])
-        .setPopup(new maplibregl.Popup().setHTML(`<div style="display: flex; flex-direction: column; align-items: left;">
-                                    ${photoUrl ? `<img src="${photoUrl}" alt="${x.name}" style="width: 200px; padding: 0px; height: 150px; object-fit: cover;" />` : ""}
-                                    <div style="font-weight: bold; font-size: 16px; margin: 8px;">
-                                      ${x.name.length > 38 ? `${x.name.slice(0, 20)}...` : x.name}
-                                    </div>
-                                    <div style="font-size: 14px; margin-left: 8px;">Rating: ${x.rating || "N/A"}</div>
-                                    <div style="font-size: 14px; margin-left: 8px;">Price: ${x.price_level ? "$".repeat(x.price_level) : "N/A"}</div>
-                                    <button id="pa-${x.place_id}" class="popup-btn" onclick="addBar('${x.place_id}')">Add</button>
-                                  </div>`))
-        .addTo(newMap);
-        
+          .setPopup(new maplibregl.Popup().setHTML(getMarkerHTML(photoUrl, x.name, x.rating, x.price_level, x.place_id, true)))
+          .addTo(newMap);
+
         // zoom to marker on click
         marker.getElement().addEventListener('click', () => {
           newMap.flyTo({
@@ -197,7 +198,7 @@ function MainPage() {
               btn.classList.remove('popup-btn-disabled');
             } else {
               btn.classList.add('popup-btn-disabled');
-            } 
+            }
           }
         });
 
@@ -213,70 +214,17 @@ function MainPage() {
         let rect = mapContainer.getBoundingClientRect();
 
         let visiblePlaces = [];
-        markerElements.forEach( x => {
+        markerElements.forEach(x => {
           let elementRect = x.getBoundingClientRect();
           intersectRect(rect, elementRect) && visiblePlaces.push(barResults.find(result => result.place_id === x.getAttribute('data-placeid')));
         });
         dispatch(setBarResultsInBounds(visiblePlaces));
       });
       setMap(newMap);
-
-      // TODO: install package for directions service, plot route
-
-
-
-      // if (selectedBars.length > 0) {
-      //   addMarkers(selectedBars, selectedMapPin);
-  
-      //   if (selectedBars.length > 1) {
-      //     const directionsService = new window.google.maps.DirectionsService();
-      //     const directionsRenderer = new window.google.maps.DirectionsRenderer({
-      //       map,
-      //       suppressMarkers: true,
-      //       polylineOptions: {
-      //         strokeColor: theme.primary,
-      //         strokeWeight: 5,
-      //         strokeOpacity: 1.0,
-      //       },
-      //     });
-  
-      //     const waypoints = selectedBars.slice(1, -1).map((place) => ({
-      //       location: place.geometry.location,
-      //       stopover: true,
-      //     }));
-  
-      //     getWalkingTime(selectedBars[0].geometry.location, selectedBars[selectedBars.length - 1].geometry.location)
-      //       .then((walkingTime) => {
-      //         const travelMode =
-      //           walkingTime > 900 
-      //             ? window.google.maps.TravelMode.DRIVING
-      //             : window.google.maps.TravelMode.WALKING;
-  
-      //         directionsService.route(
-      //           {
-      //             origin: selectedBars[0].geometry.location,
-      //             destination: selectedBars[selectedBars.length - 1].geometry.location,
-      //             waypoints: waypoints,
-      //             travelMode: travelMode,
-      //           },
-      //           (result, status) => {
-      //             if (status === "OK") {
-      //               directionsRenderer.setDirections(result);
-      //             } else {
-      //               console.error("Error fetching directions: ", status);
-      //             }
-      //           }
-      //         );
-      //       })
-      //       .catch((error) => {
-      //         console.error(error);
-      //       });
-      //   }
-      // }
     }
   }, [mapLoaded, location, nearbyLoaded]);
-  
-  
+
+
   const handleUseLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -312,7 +260,7 @@ function MainPage() {
   };
 
   const intersectRect = (r1, r2) => {
-    return !( r2.left > r1.right || r2.right < r1.left || r2.top > r1.bottom || r2.bottom < r1.top);
+    return !(r2.left > r1.right || r2.right < r1.left || r2.top > r1.bottom || r2.bottom < r1.top);
   };
 
   // must be global for popup html
@@ -332,12 +280,26 @@ function MainPage() {
           btn.classList.remove('popup-btn-disabled');
         } else {
           btn.classList.add('popup-btn-disabled');
-        } 
-      }  
+        }
+      }
     });
 
     // set global for popup event listeners
     window.selectedBarIds = selectedBarIds;
+
+    // update waypoints
+    if (selectedBarIds.length > 1) {
+      directions.setWaypoints([
+        ...selectedBars.map(x => {
+          return [x.geometry.location.lng(), x.geometry.location.lat()];
+        })
+      ]);
+    } else {
+      if (directions) {
+        directions.setWaypoints([]);
+      }
+    }
+
   }, [selectedBars]);
 
   return (
@@ -513,10 +475,10 @@ function MainPage() {
         }}
       >
         <Box id="map" style={{ width: "100%", height: "calc(100vh - 50px)" }} />
-        <Box id="gmap" style={{ display: "none"}}/>
+        <Box id="gmap" style={{ display: "none" }} />
       </Box>
       {selectedBars.length > 0 && (
-          <BarCrawlOrganizer />
+        <BarCrawlOrganizer />
       )}
     </Box>
   );
