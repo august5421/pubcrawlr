@@ -10,15 +10,17 @@ import {
   SpeedDial,
   SpeedDialIcon,
   Drawer,
-  Modal,
   CircularProgress,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import { setActivePage, setShowAuth, setSelectedBars, setBarResults, setAlert, setIsLoading, setChangeInData, setModal } from "../actions/actions";
-import { saveBarCrawl, darkenColor } from "../functions/functions";
+import { setSelectedBars, setBarResults, setAlert, setIsLoading, setChangeInData, setModal } from "../actions/actions";
+import { darkenColor } from "../functions/functions";
+import { saveBarCrawl } from "../services/BarCrawlService";
 import AddIcon from "@mui/icons-material/Add";
 import Font from "./Font";
+import { useNavigate } from 'react-router-dom';
+import { NavLink } from "react-router-dom";
 
 function BarCrawlOrganizer() {
   const dispatch = useDispatch();
@@ -33,23 +35,11 @@ function BarCrawlOrganizer() {
 
   const [barCrawlName, setBarCrawlName] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const navigate = useNavigate();
   
   const handleDelete = (place_id) => {
     const updatedBars = selectedBars.filter((bar) => bar.place_id !== place_id);
     dispatch(setSelectedBars(updatedBars));
-  };
-
-  const handlePageChange = (page) => {
-      if (page === "App") {
-        dispatch(setShowAuth(true));
-      } else {
-        dispatch(setShowAuth(false));
-      }
-      dispatch(setActivePage("In", false));
-      setTimeout(() => {
-        dispatch(setActivePage("In", true));
-        dispatch(setActivePage("Name", page));
-      }, 375);
   };
 
   const handleDragEnd = (result) => {
@@ -104,13 +94,10 @@ function BarCrawlOrganizer() {
                   padding: "5px 20px",
                   textTransform: "none",
                 }}
-                onClick={() => handlePageChange("Login")}
-                onMouseOver={(e) =>
-                    (e.target.style.backgroundColor = "#f5f5f5")
-                }
+                onMouseOver={(e) => (e.target.style.backgroundColor = "#f5f5f5")}
                 onMouseOut={(e) => (e.target.style.backgroundColor = "#d3d3d3")}
               >
-                Login
+                <NavLink to="/Login">Login</NavLink>
               </Button>
               <Button
                 variant="contained"
@@ -121,35 +108,23 @@ function BarCrawlOrganizer() {
                   padding: "5px 20px",
                   textTransform: "none",
                 }}
-                onClick={() => handlePageChange("Signup")}
-                onMouseOver={(e) =>
-                    (e.target.style.backgroundColor = darkenColor(
-                        theme.primary,
-                        0.1
-                    ))
-                }
-                onMouseOut={(e) =>
-                    (e.target.style.backgroundColor = theme.primary)
-                }
+                onMouseOver={(e) => (e.target.style.backgroundColor = darkenColor(theme.primary, 0.1))}
+                onMouseOut={(e) => (e.target.style.backgroundColor = theme.primary)}
               >
-                Sign Up
+                <NavLink to="/Signup">Sign Up</NavLink>
               </Button>
           </Box>
         </Box>
       ))
     } else {
       try {
-        await saveBarCrawl(activeUser.UserId, selectedBars, barCrawlName);
+        const createdId = await saveBarCrawl(activeUser.UserId, selectedBars, barCrawlName);
         dispatch(setSelectedBars([]));
         dispatch(setBarResults([]));
         dispatch(setAlert({ open: true, severity: 'success', message: 'Bar crawl saved successfully!' }))
         dispatch(setIsLoading(false))
         dispatch(setChangeInData(changeInData + 1))
-        dispatch(setActivePage("In", false));
-        setTimeout(() => {
-          dispatch(setActivePage("In", true));
-          dispatch(setActivePage("Name", "Crawls"));
-        }, 375);
+        setTimeout(() => { navigate(`/Crawl/${createdId}`) }, 375);
       } catch (error) {
         dispatch(setAlert({ open: true, severity: 'error', message: 'There was a problem saving the bar crawl.' }))
         dispatch(setIsLoading(false))

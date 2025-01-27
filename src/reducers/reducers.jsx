@@ -18,12 +18,12 @@ const initialState = {
     tertiary: '#00b2a3',
     grey: '#dddddd'
   },
-  activePage: {Name: 'App', In: true},
   showAuth: true,
   activeUser: {Name: '', UserId: '', Email: '', UserAvatarType: '', Friends: []},
   barResults: [],
   selectedBars: [],
   userBarCrawls: [],
+  barResultsInBounds: [],
   alert: {
     open: false,
     message: '',
@@ -73,16 +73,6 @@ const rootReducer = (state = initialState, action) => {
         },
       };
     }
-    case 'SET_ACTIVE_PAGE': {
-        const { key, value } = action.payload;
-        return {
-            ...state,
-            activePage: {
-                ...state.activePage,
-                [key]: value,
-            },
-        };
-    }
     case 'SET_SHOW_AUTH':
       return {
         ...state,
@@ -107,6 +97,11 @@ const rootReducer = (state = initialState, action) => {
       return {
         ...state,
         barResults: action.payload,
+      };
+    case 'SET_BAR_RESULTS_IN_BOUNDS': 
+      return {
+        ...state,
+        barResultsInBounds: action.payload,
       };
     case 'SET_USER_BAR_CRAWLS': 
       return {

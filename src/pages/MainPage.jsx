@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Box, List, Divider, TextField, Button } from "@mui/material";
 import { haversineDistance, getWalkingTime } from "../functions/functions";
-import { setBarResults, setLocation, setSelectedBars } from "../actions/actions";
+import { setBarResults, setBarResultsInBounds, setLocation, setSelectedBars } from "../actions/actions";
 import userPin from "../../public/assets/images/personPin.png";
 import mapPin from "../../public/assets/images/noPersonPin.png";
 import selectedMapPin from "../../public/assets/images/noPersonSelectedPin.png";
@@ -22,6 +22,7 @@ function MainPage() {
   const location = useSelector((state) => state.location);
   const selectedBars = useSelector((state) => state.selectedBars);
   const barResults = useSelector((state) => state.barResults);
+  const barResultsInBounds = useSelector((state) => state.barResultsInBounds);
 
   const [mapLoaded, setMapLoaded] = useState(false);
   const [nearbyLoaded, setNearbyLoaded] = useState(false);
@@ -133,6 +134,7 @@ function MainPage() {
               (a, b) => a.distance - b.distance
             );
             dispatch(setBarResults(sortedBars));
+            dispatch(setBarResultsInBounds(sortedBars));
             setNearbyLoaded(true);
           } else {
             console.error("PlacesService failed:", status);
@@ -150,6 +152,8 @@ function MainPage() {
       new maplibregl.Marker({
         color: "#42f55a"
       }).setLngLat([location.longitude, location.latitude]).addTo(newMap);
+      
+      let bounds = new maplibregl.LngLatBounds();
 
       // add bar result markers
       barResults.forEach((x) => {
@@ -157,8 +161,12 @@ function MainPage() {
           maxHeight: x.photos[0].height,
         }) || "";
 
-        new maplibregl.Marker({
-          color: '#3275a8'
+        // extend map bounds
+        bounds.extend([x.geometry.location.lng(), x.geometry.location.lat()]);
+
+        const marker = new maplibregl.Marker({
+          color: '#36b8f5',
+          className: 'marker'
         }).setLngLat([x.geometry.location.lng(), x.geometry.location.lat()])
         .setPopup(new maplibregl.Popup().setHTML(`<div style="display: flex; flex-direction: column; align-items: left;">
                                     ${photoUrl ? `<img src="${photoUrl}" alt="${x.name}" style="width: 200px; padding: 0px; height: 150px; object-fit: cover;" />` : ""}
@@ -167,100 +175,53 @@ function MainPage() {
                                     </div>
                                     <div style="font-size: 14px; margin-left: 8px;">Rating: ${x.rating || "N/A"}</div>
                                     <div style="font-size: 14px; margin-left: 8px;">Price: ${x.price_level ? "$".repeat(x.price_level) : "N/A"}</div>
+                                    <button id="pa-${x.place_id}" class="popup-btn" onclick="addBar('${x.place_id}')">Add</button>
                                   </div>`))
         .addTo(newMap);
+        
+        // zoom to marker on click
+        marker.getElement().addEventListener('click', () => {
+          newMap.flyTo({
+            center: [x.geometry.location.lng(), x.geometry.location.lat()],
+            speed: 0.5
+          });
+        });
+
+        marker.getElement().setAttribute('data-placeid', x.place_id);
+
+        // on popup opened, set disabled class
+        marker.getPopup().on('open', () => {
+          let btn = document.getElementById(`pa-${x.place_id}`);
+          if (btn) {
+            if (!window.selectedBarIds.includes(x.place_id)) {
+              btn.classList.remove('popup-btn-disabled');
+            } else {
+              btn.classList.add('popup-btn-disabled');
+            } 
+          }
+        });
+
       });
-      
-      // WORK IN PROGRESS, TRYING TO GET THIS SHIT TO WORK
-      // const markerGeojson = {
-      //   'type': 'geojson',
-      //   'data': {
-      //     'type': 'FeatureCollection',
-      //     'features': [
-      //       barResults.map(x => {
-      //         const photoUrl = x.photos?.[0]?.getUrl({
-      //           maxHeight: x.photos[0].height,
-      //         }) || "";
-      //         return {
-      //           'type': 'Feature',
-      //           'properties': {
-      //             'description': `<div style="display: flex; flex-direction: column; align-items: left;">
-      //                               ${photoUrl ? `<img src="${photoUrl}" alt="${x.name}" style="width: 200px; padding: 0px; height: 150px; object-fit: cover;" />` : ""}
-      //                               <div style="font-weight: bold; font-size: 16px; margin: 8px;">
-      //                                 ${x.name.length > 38 ? `${x.name.slice(0, 20)}...` : x.name}
-      //                               </div>
-      //                               <div style="font-size: 14px; margin-left: 8px;">Rating: ${x.rating || "N/A"}</div>
-      //                               <div style="font-size: 14px; margin-left: 8px;">Price: ${x.price_level ? "$".repeat(x.price_level) : "N/A"}</div>
-      //                             </div>`,
-      //             'placeId': x.place_id
-      //           },
-      //           'geometry': {
-      //             'type': 'Point',
-      //             'coordinates': [x.geometry.location.lng(), x.geometry.location.lat()]
-      //           }
-      //         }
-      //       })
-      //     ]
-      //   }
-      // };
 
-      // WORK IN PROGRESS, TRYING TO GET THIS SHIT TO WORK
-      // newMap.on('load', async () => {
-      //   newMap.addSource('bars', markerGeojson);
-      //   newMap.addLayer({
-      //     'id': 'bars',
-      //     'type': 'symbol',
-      //     'source': 'bars',
-      //     'layout': {
-      //       'icon-overlap': 'always',
-      //       'icon-image': 'custom-marker'
-      //     }
-      //   });
-  
-      //   const popup = new maplibregl.Popup({
-      //     closeButton: false,
-      //     closeOnClick: false
-      //   });
+      // zoom to fit results
+      newMap.fitBounds(bounds);
 
-      //   newMap.on('mouseenter', 'bars', (e) => {
-      //     // Change the cursor style as a UI indicator.
-      //     newMap.getCanvas().style.cursor = 'pointer';
-  
-      //     const coordinates = e.features[0].geometry.coordinates.slice();
-      //     const description = e.features[0].properties.description;
-  
-      //     // Ensure that if the map is zoomed out such that multiple
-      //     // copies of the feature are visible, the popup appears
-      //     // over the copy being pointed to.
-      //     while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-      //         coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
-      //     }
-  
-      //     // Populate the popup and set its coordinates
-      //     // based on the feature found.
-      //     popup.setLngLat(coordinates).setHTML(description).addTo(newMap);
-      //   });
+      // on zoom, set bar results in map bounds
+      newMap.on('moveend', () => {
+        let mapContainer = newMap.getContainer();
+        let markerElements = [...mapContainer.getElementsByClassName('marker')];
+        let rect = mapContainer.getBoundingClientRect();
 
-      //   newMap.on('mouseleave', 'bars', () => {
-      //     newMap.getCanvas().style.cursor = '';
-      //     popup.remove();
-      //   });
-  
-      //   newMap.on('click', 'bars', (e) => {
-      //     const selectedPlace = e.features[0].properties.place_id;
-      //     if (selectedBars.some(bar => bar.place_id === selectedPlace)) {
-      //       const updatedBars = selectedBars.filter(x => x.place_id !== selectedPlace);
-      //       dispatch(setSelectedBars(updatedBars));
-      //     } else {
-      //       const place = places.find(x => x.place_id === selectedPlace);
-      //       dispatch(setSelectedBars([...selectedBars, place]));
-      //     }
-      //   });
-      // });
-
+        let visiblePlaces = [];
+        markerElements.forEach( x => {
+          let elementRect = x.getBoundingClientRect();
+          intersectRect(rect, elementRect) && visiblePlaces.push(barResults.find(result => result.place_id === x.getAttribute('data-placeid')));
+        });
+        dispatch(setBarResultsInBounds(visiblePlaces));
+      });
       setMap(newMap);
 
-      // TODO: click handling to add bars, install package for directions service, plot route
+      // TODO: install package for directions service, plot route
 
 
 
@@ -313,7 +274,7 @@ function MainPage() {
       //   }
       // }
     }
-  }, [mapLoaded, location, nearbyLoaded, selectedBars]);
+  }, [mapLoaded, location, nearbyLoaded]);
   
   
   const handleUseLocation = () => {
@@ -338,7 +299,7 @@ function MainPage() {
       );
       if (!existingScript) {
         const script = document.createElement("script");
-        script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyBERPw7z0F-9OZAw8P2fBrKAGLtPEBWMLw&libraries=places`;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_API_KEY}&libraries=places`;
         script.async = true;
         script.onload = () => {
           setMapLoaded(true);
@@ -348,7 +309,36 @@ function MainPage() {
         setMapLoaded(true);
       }
     }
+  };
+
+  const intersectRect = (r1, r2) => {
+    return !( r2.left > r1.right || r2.right < r1.left || r2.top > r1.bottom || r2.bottom < r1.top);
+  };
+
+  // must be global for popup html
+  window.addBar = (place_id) => {
+    const selectedBar = barResults.find(x => x.place_id === place_id);
+    dispatch(setSelectedBars([...selectedBars, selectedBar]));
   }
+
+  // selectedBars listener
+  useEffect(() => {
+    const selectedBarIds = selectedBars.map(x => x.place_id);
+    // set disabled for any open popups
+    barResults.forEach(bar => {
+      let btn = document.getElementById(`pa-${bar.place_id}`);
+      if (btn) {
+        if (!selectedBarIds.includes(bar.place_id)) {
+          btn.classList.remove('popup-btn-disabled');
+        } else {
+          btn.classList.add('popup-btn-disabled');
+        } 
+      }  
+    });
+
+    // set global for popup event listeners
+    window.selectedBarIds = selectedBarIds;
+  }, [selectedBars]);
 
   return (
     <Box
@@ -427,7 +417,7 @@ function MainPage() {
               padding: "10px",
             }}
           >
-            {barResults.map((bar, index) => (
+            {barResultsInBounds.map((bar, index) => (
               <BarCard bar={bar} index={index} key={index} mode='localBars' />
             ))}
           </Box>
@@ -508,7 +498,7 @@ function MainPage() {
             }}
           >
             <List>
-              {barResults.map((bar, index) => (
+              {barResultsInBounds.map((bar, index) => (
                 <BarCard bar={bar} index={index} key={index} mode='localBars' />
               ))}
             </List>

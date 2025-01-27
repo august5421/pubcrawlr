@@ -14,10 +14,6 @@ export const setIsLoading = (state) => ({
   type: 'SET_IS_LOADING',
   payload: state,
 });
-export const setActivePage = (key, value) => ({
-  type: 'SET_ACTIVE_PAGE',
-  payload: { key, value },
-});
 export const setShowAuth = (state) => ({
   type: 'SET_SHOW_AUTH',
   payload: state,
@@ -32,6 +28,10 @@ export const setSelectedBars = (bars) => ({
 });
 export const setBarResults = (bars) => ({
   type: 'SET_BAR_RESULTS',
+  payload: bars,
+});
+export const setBarResultsInBounds = (bars) => ({
+  type: 'SET_BAR_RESULTS_IN_BOUNDS',
   payload: bars,
 });
 export const setAlert = (payload) => ({
