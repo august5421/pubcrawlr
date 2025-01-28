@@ -1,6 +1,5 @@
 import { collection, addDoc, serverTimestamp, getDoc, doc, deleteDoc } from "firebase/firestore";
 import { db } from '../config/Firebase.jsx';
-import { setAlert } from '../actions/actions.jsx';
 
 export async function saveBarCrawl(userID, barCrawlInfo, crawlName) {
   try {
@@ -55,7 +54,6 @@ export async function getAllBarCrawlsForUser(userId) {
     return [...adminCrawls, ...inviteeCrawls.filter(crawl => !adminCrawls.some(admin => admin.id === crawl.id))];
   } catch (e) {
     console.error('Error fetching user bar crawls:', e);
-    dispatch(setAlert({ open: true, message: 'Failed to fetch bar crawls.', severity: 'error' }));
   }
 };
 
@@ -64,6 +62,5 @@ export async function deleteBarCrawl(crawlId) {
     await deleteDoc(doc(db, 'BarCrawls', crawlId));
   } catch (e) {
     console.error('Error deleting bar crawl:', e);
-    dispatch(setAlert({ open: true, message: 'Failed to delete crawl.', severity: 'error' }));
   }
 }

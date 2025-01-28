@@ -1,6 +1,6 @@
 import { auth, db } from '../config/Firebase.jsx';
-import { setDoc, getDoc, doc } from 'firebase/firestore';
-import { setAlert } from '../actions/actions.jsx';
+import { setDoc, getDoc, doc, updateDoc } from 'firebase/firestore';
+import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 
 export async function signIn(email, password) {
 	try {
@@ -8,7 +8,6 @@ export async function signIn(email, password) {
 		return userCredential.user;
 	} catch (e) {
 		console.error('Error authenticating user: ', e);
-		dispatch(setAlert({ open: true, message: 'Error authenticating user', severity: 'error' }));
 	}
 }
 
@@ -19,7 +18,6 @@ export async function getUser(userId) {
 		return response.data();
 	} catch (e) {
 		console.error('Error fetching user: ', e);
-		dispatch(setAlert({ open: true, message: 'Error fetching user', severity: 'error' }));
 	}
 }
 
@@ -33,7 +31,6 @@ export async function getFriendsForUser(userId) {
 		return [];
 	} catch (e) {
 		console.error('Error fetching friends for user: ', e);
-		dispatch(setAlert({ open: true, message: 'Error fetching friends for user', severity: 'error' }));
 	}
 }
 
@@ -58,7 +55,20 @@ export async function createUser(email, password) {
 		return user;
 	} catch (e) {
 		console.error('Error creating user: ', e);
-		dispatch(setAlert({ open: true, message: 'Error creating user', severity: 'error' }));
+	}
+}
+
+export async function updateUser(userId, firstName, lastName, avatarType) {
+	try {
+		const userRef = doc(db, 'Users', userId);
+		const response = await updateDoc(userRef, {
+			UserFirstName: firstName,
+			UserLastName: lastName,
+			UserAvatarType: avatarType
+		});
+		return response.data();
+	} catch (e) {
+		console.error('Error updating user: ', e);
 	}
 }
 
@@ -67,6 +77,20 @@ export async function sendPasswordReset(email) {
 		await auth.sendPasswordResetEmail(email);
 	} catch (e) {
 		console.error('Error sending email: ', e);
-		dispatch(setAlert({ open: true, message: 'Error sending password reset email. Please try again.', severity: 'error' }));
+	}
+}
+
+export async function updatePasswordForUser(oldPassword, newPassword) {
+	try {
+		const user = auth.currentUser;
+		if (user) {
+			const credential = EmailAuthProvider.credential(user.email, oldPassword);
+			await reauthenticateWithCredential(user, credential);
+			await updatePassword(user, newPassword);
+			return true;
+		}
+	} catch (e) {
+		console.error('Error updating password: ', e);
+		return false;
 	}
 }

@@ -4,24 +4,22 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
-import { auth, db } from '../config/Firebase.jsx';
 import { useDispatch, useSelector } from 'react-redux';
-import { doc, updateDoc } from 'firebase/firestore';
 import { darkenColor } from '../functions/functions.jsx';
-import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { stringAvatar } from '../functions/functions.jsx';
 import Font from '../components/Font.jsx';
 import { setActiveUser, setAlert, setIsLoading } from '../actions/actions.jsx';
 import Avatar2 from 'boring-avatars';
 import FriendManagement from '../components/FriendManagement.jsx';
+import { updateUser, updatePasswordForUser } from '../services/AuthenticationService.jsx';
 
 function AccountPage() {
   const dispatch = useDispatch();
   const theme = useSelector((state) => state.theme);
   const isMobile = useSelector((state) => state.isMobile);
   const isTablet = useSelector((state) => state.isTablet);
-  const activeUser = useSelector((state) => state.activeUser); 
-  const isLoading = useSelector((state) => state.isLoading); 
+  const activeUser = useSelector((state) => state.activeUser);
+  const isLoading = useSelector((state) => state.isLoading);
 
   const [avaRoto, setAvaRoto] = useState(activeUser.UserAvatarType);
   const [formState, setFormState] = useState({
@@ -43,29 +41,14 @@ function AccountPage() {
     if (!validateFields()) return;
     dispatch(setIsLoading(true))
     try {
-      const userRef = doc(db, 'Users', activeUser.UserId);
-      await updateDoc(userRef, {
-        UserFirstName: formState.firstName,
-        UserLastName: formState.lastName,
-        UserAvatarType: avaRoto,
-      });
+      await updateUser(activeUser.UserId, formState.firstName, formState.lastName, avaRoto);
       if (formState.passwordAccordionExpanded) {
-        const user = auth.currentUser;
-        if (!user) return;
-        const credential = EmailAuthProvider.credential(user.email, formState.oldPassword);
-        try {
-          await reauthenticateWithCredential(user, credential);  
-          await updatePassword(user, formState.newPassword);  
+        const success = await updatePasswordForUser(formState.oldPassword, formState.newPassword);
+        if (success) {
           setAlert({
             open: true,
             severity: 'success',
             message: 'Password updated successfully!',
-          });
-        } catch (error) {
-          setAlert({
-            open: true,
-            severity: 'error',
-            message: 'Failed to update password. Please try again.',
           });
         }
       }
@@ -115,13 +98,13 @@ function AccountPage() {
 
   const nextAvatarType = () => {
     const currentIndex = avaTypes.indexOf(avaRoto);
-    const nextIndex = (currentIndex + 1) % avaTypes.length; 
+    const nextIndex = (currentIndex + 1) % avaTypes.length;
     setAvaRoto(avaTypes[nextIndex]);
   };
 
   const prevAvatarType = () => {
     const currentIndex = avaTypes.indexOf(avaRoto);
-    const prevIndex = (currentIndex - 1 + avaTypes.length) % avaTypes.length; 
+    const prevIndex = (currentIndex - 1 + avaTypes.length) % avaTypes.length;
     setAvaRoto(avaTypes[prevIndex]);
   };
 
@@ -157,8 +140,8 @@ function AccountPage() {
         />
         <Box style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: '10px' }}>
           <Box style={{ display: 'flex', flexDirection: 'column', marginRight: '15px' }}>
-            <Box style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
-              <Box sx={{cursor: 'pointer', margin: '0px 10px'}} onClick={prevAvatarType} aria-label="Previous Avatar Type">
+            <Box style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+              <Box sx={{ cursor: 'pointer', margin: '0px 10px' }} onClick={prevAvatarType} aria-label="Previous Avatar Type">
                 <ArrowBackIcon />
               </Box>
               {avaRoto !== 'text' ? (
@@ -176,14 +159,14 @@ function AccountPage() {
                   {stringAvatar(activeUser.Name)}
                 </Avatar>
               )}
-              <Box sx={{cursor: 'pointer', margin: '0px 10px'}} onClick={nextAvatarType} aria-label="Next Avatar Type">
+              <Box sx={{ cursor: 'pointer', margin: '0px 10px' }} onClick={nextAvatarType} aria-label="Next Avatar Type">
                 <ArrowForwardIcon />
               </Box>
             </Box>
           </Box>
         </Box>
-        
-        <Box style={{ marginTop: '10px', textAlign: 'center'}}>
+
+        <Box style={{ marginTop: '10px', textAlign: 'center' }}>
           <TextField
             fullWidth
             label="First Name"
@@ -200,15 +183,15 @@ function AccountPage() {
             onChange={(e) => handleChange('lastName', e.target.value)}
             margin="normal"
           />
-          <Accordion 
-            expanded={formState.passwordAccordionExpanded} 
+          <Accordion
+            expanded={formState.passwordAccordionExpanded}
             onChange={() => handleChange('passwordAccordionExpanded', !formState.passwordAccordionExpanded)}
             sx={{
-              border: 'none', 
-              boxShadow: 'none', 
+              border: 'none',
+              boxShadow: 'none',
               '&::before': {
                 height: '0px',
-                opacity: 0, 
+                opacity: 0,
               },
             }}
           >
@@ -216,11 +199,11 @@ function AccountPage() {
               expandIcon={<ExpandMoreIcon />}
               aria-controls="change-pw"
               id="change-pw"
-              sx={{padding: '0px 0px 0px 4px'}}
+              sx={{ padding: '0px 0px 0px 4px' }}
             >
               <Typography variant="subtitle1">Change Password</Typography>
             </AccordionSummary>
-            <AccordionDetails sx={{padding: '0px'}}>
+            <AccordionDetails sx={{ padding: '0px' }}>
               <TextField
                 fullWidth
                 label="Old Password"
