@@ -14,6 +14,10 @@ export const setIsLoading = (state) => ({
   type: 'SET_IS_LOADING',
   payload: state,
 });
+export const setIsAdmin = (state) => ({
+  type: 'SET_IS_ADMIN',
+  payload: state,
+});
 export const setShowAuth = (state) => ({
   type: 'SET_SHOW_AUTH',
   payload: state,

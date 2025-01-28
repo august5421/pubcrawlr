@@ -8,13 +8,18 @@ import { getMarkerHTML } from '../functions/functions';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import MapLibreGlDirections, { LoadingIndicatorControl } from "@maplibre/maplibre-gl-directions";
+import BarCrawlOrganizer from '../components/BarCrawlOrganizer';
+import { setIsAdmin, setSelectedBars } from '../actions/actions';
 
 function SingleCrawlPage() {
   const dispatch = useDispatch();
   const theme = useSelector((state) => state.theme);
   const isMobile = useSelector((state) => state.isMobile);
+  const isTablet = useSelector((state) => state.isTablet);
   const isLarge = useSelector((state) => state.isLarge);
+  const activeUser = useSelector((state) => state.activeUser);
   const location = useSelector((state) => state.location);
+  const selectedBars = useSelector((state) => state.selectedBars);
 
   const [crawl, setCrawl] = useState([]);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -22,15 +27,26 @@ function SingleCrawlPage() {
   const [map, setMap] = useState(null);
   const [directions, setDirections] = useState(null);
   const { slug } = useParams();
-
+  
   // load crawl by id
   useEffect(() => {
     getBarCrawl(slug).then((response) => {
       setCrawl(response);
       setCrawlLoaded(true);
+      dispatch(setSelectedBars(response.barCrawlInfo || []));
     });
-  }, [slug]);
+  }, [slug, dispatch]);
+  
+  // set isAdmin global state
+  useEffect(() => {
+    if (crawl && crawl.admins) {
+      const isUserAdmin = crawl.admins.includes(activeUser.UserId);
+      //const isUserAdmin = false;
+      dispatch(setIsAdmin(isUserAdmin));
+    } 
+  }, [crawl, activeUser.UserId, dispatch]);
 
+  useEffect(()=>{console.log(crawl)}, [crawl])
   // render map
   useEffect(() => {
     if (!mapLoaded && crawlLoaded) {
@@ -104,8 +120,8 @@ function SingleCrawlPage() {
         width: "100%",
       }}
     >
-
-      {!isMobile && (
+      {crawlLoaded && <BarCrawlOrganizer crawl={crawl} mode="edit" slug={slug} setCrawl={setCrawl} />}
+      {!isMobile && !isTablet ?  (
         <Box
           style={{
             display: "flex",
@@ -115,8 +131,17 @@ function SingleCrawlPage() {
         >
           <Box id="map" style={{ width: "100%", height: "calc(100vh - 50px)" }} />
         </Box>
+      ) : (
+        <Box
+          style={{
+            display: "flex",
+            flexDirection: "row",
+          }}
+        >
+          <Box id="map" style={{ width: "100%", height: "calc(100vh - 50px)" }} />
+        </Box>
       )}
-      {crawlLoaded && <FinishedBarList selectedBarCrawl={crawl} />}
+      
     </Box>
 
   );

@@ -166,7 +166,7 @@ function MyCrawlsPage({ userBarCrawls }) {
           <Box id="map" style={{ width: "100%", height: "calc(100vh - 50px)" }} />
         </Box>
       )}
-      {expanded !== null && <FinishedBarList selectedBarCrawl={selectedBarCrawl} />}
+      
     </Box>
 
   );

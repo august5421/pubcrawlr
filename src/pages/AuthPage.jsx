@@ -112,7 +112,7 @@ function AuthPage({ mode }) {
           }
 
           try {
-            const user = await createUser(email, password);
+            const user = await createUser(email, password, fName, lName, location );
             const friendsArray = await getFriendsForUser(user.uid)
             updateUserState(`${fName} ${lName}`, user.uid, email, 'text', friendsArray, location);
           } catch (error) {

@@ -3,6 +3,7 @@ const initialState = {
   isTablet: false,
   isLarge: false,
   isLoading: false,
+  isAdmin: false,
   modalState: {
     open: false,
     content: null,
@@ -53,6 +54,11 @@ const rootReducer = (state = initialState, action) => {
       return {
         ...state,
         isLoading: action.payload,
+      };
+    case 'SET_IS_ADMIN':
+      return {
+        ...state,
+        isAdmin: action.payload,
       };
     case 'SET_LOCATION':
       return {
