@@ -15,9 +15,6 @@ function MyCrawlsPage({ userBarCrawls }) {
   const isMobile = useSelector((state) => state.isMobile);
   const isLarge = useSelector((state) => state.isLarge);
 
-
-  const mapRef = useRef(null);
-  const mapInstance = useRef(null);
   const [expanded, setExpanded] = useState(null);
   const [selectedBarCrawl, setSelectedBarCrawl] = useState(null);
   const [map, setMap] = useState(null);
@@ -113,7 +110,7 @@ function MyCrawlsPage({ userBarCrawls }) {
     >
       {isMobile && (
         <Box
-          ref={mapRef}
+          id="map"
           style={{
             width: "100%",
             flex: isMobile ? "none" : isLarge ? 3 : 5,
@@ -153,7 +150,7 @@ function MyCrawlsPage({ userBarCrawls }) {
               <Typography variant="h6">{crawl.barcrawlName}</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <CrawlCrudButtons crawl={crawl} mapInstance={mapInstance} setExpanded={setExpanded} setSelectedBarCrawl={setSelectedBarCrawl} />
+              <CrawlCrudButtons crawl={crawl} setExpanded={setExpanded} setSelectedBarCrawl={setSelectedBarCrawl} />
             </AccordionDetails>
           </Accordion>
         ))}

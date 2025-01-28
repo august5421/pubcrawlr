@@ -1,5 +1,4 @@
 import { db } from '../config/Firebase.jsx';
-import { setAlert } from '../actions/actions.jsx';
 
 export async function getFriendsData(userId) {
     try {
@@ -14,6 +13,5 @@ export async function getFriendsData(userId) {
         };
     } catch (e) {
         console.error('Error fetching friends data:', e);
-        dispatch(setAlert({ open: true, message: 'Failed to fetch bar crawls.', severity: 'error' }));
     }
 };

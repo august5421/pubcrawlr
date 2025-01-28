@@ -19,7 +19,7 @@ const initialState = {
     grey: '#dddddd'
   },
   showAuth: true,
-  activeUser: {Name: '', UserId: '', Email: '', UserAvatarType: '', Friends: []},
+  activeUser: { Name: '', UserId: '', Email: '', UserAvatarType: '', Friends: [] },
   barResults: [],
   selectedBars: [],
   userBarCrawls: [],
@@ -27,8 +27,9 @@ const initialState = {
   alert: {
     open: false,
     message: '',
-    severity: 'error', 
+    severity: 'error',
   },
+  location: null
 };
 
 const rootReducer = (state = initialState, action) => {
@@ -81,29 +82,29 @@ const rootReducer = (state = initialState, action) => {
     case 'SET_ACTIVE_USER': {
       const { key, value } = action.payload;
       return {
-          ...state,
-          activeUser: {
-              ...state.activeUser,
-              [key]: value,
-          },
+        ...state,
+        activeUser: {
+          ...state.activeUser,
+          [key]: value,
+        },
       };
     }
-    case 'SET_SELECTED_BARS': 
+    case 'SET_SELECTED_BARS':
       return {
         ...state,
         selectedBars: action.payload,
       };
-    case 'SET_BAR_RESULTS': 
+    case 'SET_BAR_RESULTS':
       return {
         ...state,
         barResults: action.payload,
       };
-    case 'SET_BAR_RESULTS_IN_BOUNDS': 
+    case 'SET_BAR_RESULTS_IN_BOUNDS':
       return {
         ...state,
         barResultsInBounds: action.payload,
       };
-    case 'SET_USER_BAR_CRAWLS': 
+    case 'SET_USER_BAR_CRAWLS':
       return {
         ...state,
         userBarCrawls: action.payload,
@@ -124,7 +125,7 @@ const rootReducer = (state = initialState, action) => {
     default:
       return state;
   }
-  
+
 };
 
 
