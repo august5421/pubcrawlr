@@ -136,7 +136,7 @@ function BarCard({ bar, index, mode, isActive }) {
               <Button
                 variant="contained"
                 onClick={() => {addToCrawl(bar)}}
-                disabled={Boolean(selectedBars.find(barInArr => barInArr.name === bar.name))}
+                disabled={Boolean(selectedBars.find(barInArr => barInArr?.name === bar.name))}
                 sx={{
                   borderRadius: "50px",
                   backgroundColor: theme.primary,

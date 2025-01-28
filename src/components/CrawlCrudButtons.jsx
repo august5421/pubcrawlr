@@ -4,6 +4,7 @@ import { setIsLoading, setModal, setChangeInData, setAlert } from '../actions/ac
 import Font from './Font';
 import { useNavigate } from 'react-router-dom';
 import { deleteBarCrawl } from '../services/BarCrawlService';
+import { useEffect } from 'react';
 
 function CrawlCrudButtons({ crawl, setSelectedBarCrawl, setExpanded }) {
   const dispatch = useDispatch();
@@ -83,7 +84,11 @@ function CrawlCrudButtons({ crawl, setSelectedBarCrawl, setExpanded }) {
         </Button>
       </Box>
       <Box style={{ display: "flex", flexDirection: "column" }}>
-        <Button variant="contained" color="secondary">
+        <Button
+          variant="contained"
+          color="secondary"
+          onClick={() => navigate(`/Crawl/${crawl.id}`)} 
+        >
           Edit
         </Button>
       </Box>

@@ -34,7 +34,7 @@ export async function getFriendsForUser(userId) {
 	}
 }
 
-export async function createUser(email, password) {
+export async function createUser(email, password, fName, lName, location) {
 	try {
 		const userCredential = await auth.createUserWithEmailAndPassword(email, password);
 		const user = userCredential.user;
@@ -42,7 +42,7 @@ export async function createUser(email, password) {
 		await setDoc(doc(db, 'Users', user.uid), {
 			UserEmail: email,
 			UserFirstName: fName,
-			UserLastName: lName,
+			UserLastName: lName ? lName : null,
 			UserAvatarType: 'text',
 			CreateDate: new Date(),
 			userLocation: location ? location : null

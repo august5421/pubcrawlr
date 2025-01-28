@@ -58,7 +58,7 @@ const FriendManagement = () => {
     try {
       const allUsers = await fetchUsers();
       const filteredUsers = allUsers.filter((user) => user.id !== activeUser.UserId);
-      const usersThatAreFriends = activeUser.Friends[0].filter((friend) => friend.Type === 'friends');
+      const usersThatAreFriends = activeUser.Friends[0]?.filter((friend) => friend.Type === 'friends');
       
       if (searchTerm.trim() === '') {
         
@@ -76,13 +76,13 @@ const FriendManagement = () => {
             .sort((a, b) => a.distance - b.distance)
             .slice(0, 6);
           const filteredResults = sortedUsers.filter(
-            (user) => !usersThatAreFriends.some((friend) => friend.friendId === user.id)
+            (user) => !usersThatAreFriends?.some((friend) => friend.friendId === user.id)
           );
           setResults(filteredResults);
         } else {
           const randomUsers = filteredUsers.sort(() => Math.random() - 0.5).slice(0, 6);
           const filteredResults = randomUsers.filter(
-            (user) => !usersThatAreFriends.some((friend) => friend.friendId === user.id)
+            (user) => !usersThatAreFriends?.some((friend) => friend.friendId === user.id)
           );
           setResults(filteredResults);
         }

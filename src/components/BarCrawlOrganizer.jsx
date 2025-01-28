@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Box,
@@ -12,17 +12,24 @@ import {
   Drawer,
   CircularProgress,
 } from "@mui/material";
+import ThumbUpIcon from '@mui/icons-material/ThumbUp';
+import ThumbDownIcon from '@mui/icons-material/ThumbDown';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import PublicIcon from '@mui/icons-material/Public';
+import LockPersonIcon from '@mui/icons-material/LockPerson';
+import GroupsIcon from '@mui/icons-material/Groups';
 import DeleteIcon from "@mui/icons-material/Delete";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import { setSelectedBars, setBarResults, setAlert, setIsLoading, setChangeInData, setModal } from "../actions/actions";
+import { setSelectedBars, setBarResults, setAlert, setIsLoading, setChangeInData, setModal, setIsAdmin } from "../actions/actions";
 import { darkenColor } from "../functions/functions";
-import { saveBarCrawl } from "../services/BarCrawlService";
+import { saveBarCrawl, addImpression, getBarCrawl, addAttendance } from "../services/BarCrawlService";
 import AddIcon from "@mui/icons-material/Add";
 import Font from "./Font";
 import { useNavigate } from 'react-router-dom';
 import { NavLink } from "react-router-dom";
+import { Timestamp } from 'firebase/firestore';
 
-function BarCrawlOrganizer() {
+function BarCrawlOrganizer({ crawl, mode, slug, setCrawl }) {
   const dispatch = useDispatch();
   const theme = useSelector((state) => state.theme);
   const isMobile = useSelector((state) => state.isMobile);
@@ -32,9 +39,11 @@ function BarCrawlOrganizer() {
   const selectedBars = useSelector((state) => state.selectedBars);
   const changeInData = useSelector((state) => state.changeInData);
   const activeUser = useSelector((state) => state.activeUser);
+  const isAdmin = useSelector((state) => state.isAdmin);
+  
+  const [barCrawlName, setBarCrawlName] = useState(mode === 'edit' ? crawl.barcrawlName : "");
+  const [drawerOpen, setDrawerOpen] = useState(false);  
 
-  const [barCrawlName, setBarCrawlName] = useState("");
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleDelete = (place_id) => {
@@ -53,6 +62,44 @@ function BarCrawlOrganizer() {
 
   const handleBarCrawlNameChange = (event) => {
     setBarCrawlName(event.target.value);
+  };
+
+  const handleLike = async (placeId) => {
+    const likeRefConstructor = { UserID: activeUser.UserId, placeId: placeId, impression: 'liked' };
+    try {
+      await addImpression(slug, placeId, likeRefConstructor);
+       getBarCrawl(slug).then((response) => {
+        setCrawl(response);
+        dispatch(setSelectedBars(response.barCrawlInfo || []));
+      });
+    } catch (error) {
+      console.error('Error liking the bar:', error);
+    }
+  };
+  
+  const handleDislike = async (placeId) => {
+    const dislikeRefConstructor = { UserID: activeUser.UserId, placeId: placeId, impression: 'disliked' };
+    try {
+      await addImpression(slug, placeId, dislikeRefConstructor);
+      getBarCrawl(slug).then((response) => {
+       setCrawl(response);
+       dispatch(setSelectedBars(response.barCrawlInfo || []));
+     });
+    } catch (error) {
+      console.error('Error disliking the bar:', error);
+    }
+  };
+  
+  const handleAttend = async () => {
+    const attendeeConstructor = { UserID: activeUser.UserId, attendance: true };
+    console.log(attendeeConstructor);
+    await addAttendance(slug, attendeeConstructor);  
+  };
+  
+  const handleNotAttend = async () => {
+    const nonAttendeeConstructor = { UserID: activeUser.UserId, attendance: false };
+    console.log(nonAttendeeConstructor);
+    await addAttendance(slug, nonAttendeeConstructor); 
   };
 
   const handleSaveCrawl = async () => {
@@ -74,7 +121,7 @@ function BarCrawlOrganizer() {
           }}
         >
           <Font
-            text="Great looking crawl!"
+            text={"Great looking crawl!"}
             color={theme.primary}
             variant="h6"
             weight="bold"
@@ -132,6 +179,22 @@ function BarCrawlOrganizer() {
     }
   };
 
+  const formatDate = (timestamp) => {
+    if (timestamp instanceof Timestamp) {
+      const date = timestamp.toDate();
+  
+      const options = { weekday: 'long', month: 'long', day: 'numeric' };
+      const formattedDate = date.toLocaleDateString('en-US', options); 
+  
+      const hours = date.getHours();
+      const minutes = date.getMinutes();
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const formattedTime = `${(hours % 12) || 12}:${minutes < 10 ? `0${minutes}` : minutes} ${ampm}`;
+  
+      return `${formattedDate} at ${formattedTime}`;
+    }
+    return 'Invalid date';
+  };
 
   return (
     <>
@@ -147,14 +210,49 @@ function BarCrawlOrganizer() {
             padding: "10px 0px 0px 10px",
           }}
         >
-          <TextField
-            label="Name Your Crawl"
-            variant="outlined"
-            size="small"
-            value={barCrawlName}
-            onChange={handleBarCrawlNameChange}
-            sx={{ width: "calc(100% - 20px)", marginBottom: "10px" }}
-          />
+          {mode === 'edit' && !isAdmin ? (
+            <Box style={{display: 'flex', flexDirection: 'column'}}>
+              <Font
+                text={crawl.barcrawlName}
+                color={theme.primary}
+                variant="h6"
+                weight="bold"
+                fontFamily="PrimaryOrig"
+              />
+              <Box style={{display: 'flex', flexDirection: 'row'}}>
+                <Box style={{display: 'flex', flexDirection: 'column', flex: 1}}>
+                  <CalendarMonthIcon />
+                </Box>
+                <Box style={{display: 'flex', flexDirection: 'column', flex: 9}}>
+                  <Typography variant="subtitle1">
+                    {formatDate(crawl.startDate)}
+                  </Typography>
+                </Box>
+              </Box>
+              <Box style={{display: 'flex', flexDirection: 'row'}}>
+                <Box style={{display: 'flex', flexDirection: 'column', flex: 1}}>
+                  {crawl.intamacyLevel === 'Public'}
+                  {crawl.intamacyLevel === 'Private'}
+                  {crawl.intamacyLevel === 'Friends'}
+                </Box>
+                <Box style={{display: 'flex', flexDirection: 'column', flex: 9}}>
+                  <Typography variant="subtitle1">
+                    {crawl.intamacyLevel}
+                  </Typography>
+                </Box>
+              </Box>
+              <Divider sx={{margin: '10px 0px'}} />
+            </Box>
+          ) : (
+            <TextField
+              label="Name Your Crawl"
+              variant="outlined"
+              size="small"
+              value={barCrawlName}
+              onChange={handleBarCrawlNameChange}
+              sx={{ width: "calc(100% - 10px)", marginBottom: "10px" }}
+            />
+          )}
           {selectedBars.length > 0 && (
             <DragDropContext onDragEnd={handleDragEnd}>
               <Droppable droppableId="bar-list">
@@ -174,55 +272,102 @@ function BarCrawlOrganizer() {
                         key={bar.place_id}
                         draggableId={bar.place_id}
                         index={index}
+                        isDragDisabled={mode === 'edit' && !isAdmin}
                       >
                         {(provided) => (
-                          <Box
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            style={{
-                              ...provided.draggableProps.style,
-                              display: "flex",
-                              flexDirection: "column",
-                            }}
-                          >
+                          <Box 
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          style={{
+                            ...provided.draggableProps.style,
+                            display: 'flex', 
+                            flexDirection: 'row',
+                            justifyContent: 'space-between',
+                            borderBottom: '1px solid #e8e8e8', 
+                            padding: '5px 0px'
+                          }}>
                             <Box
-                              sx={{
+                              style={{
                                 display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "center",
+                                flexDirection: "column",
                               }}
                             >
-                              <Typography
-                                variant="subtitle1"
-                                sx={{ fontWeight: "bold" }}
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                }}
                               >
-                                {bar.name.length > 38
-                                  ? `${bar.name.slice(0, 35)}...`
-                                  : bar.name}
+                                <Typography
+                                  variant="subtitle1"
+                                  sx={{ fontWeight: "bold" }}
+                                >
+                                  {bar.name.length > 38
+                                    ? `${bar.name.slice(0, 35)}...`
+                                    : bar.name}
+                                </Typography>
+                                
+                              </Box>
+                              <Typography variant="body2">
+                                Rating: {bar.rating || "N/A"}
                               </Typography>
-                              <IconButton
-                                color="error"
-                                onClick={() => handleDelete(bar.place_id)}
-                              >
-                                <DeleteIcon />
-                              </IconButton>
+                              <Typography variant="body2">
+                                Price: {bar.price_level ? ('$'.repeat(bar.price_level)) : ('N/A')}
+                              </Typography>
                             </Box>
-                            <Typography variant="body2">
-                              Rating: {bar.rating || "N/A"}
-                            </Typography>
-                            <Typography variant="body2">
-                              Price: {bar.price_level ? ('$'.repeat(bar.price_level)) : ('N/A')}
-                            </Typography>
-                            <Divider
-                              sx={{
-                                marginTop: "10px",
-                                marginBottom:
-                                  selectedBars.length - 1 === index
-                                    ? "10px"
-                                    : null,
-                              }}
-                            />
+                            <Box style={{display: 'flex', flexDirection: 'column'}}>
+                              <Box style={{ display: 'flex', flexDirection: 'row', gap: '10px' }}>
+                                {mode === 'edit' && (
+                                  <Box style={{display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center'}}>
+                                    <IconButton 
+                                        sx={{visibility: isAdmin ? 'hidden' : 'visible'}} color="primary" onClick={() => {handleLike(bar.place_id)}}>
+                                      <ThumbUpIcon />
+                                    </IconButton>
+                                    <Typography variant="caption">
+                                      {isAdmin ? null : bar.impressions.filter(item => item.impression === "liked").length}
+                                    </Typography>
+                                    <Typography variant="caption">
+                                      {isAdmin && bar.impressions.filter(item => item.impression === "liked").length}{(bar.impressions.filter(item => item.impression === "liked").length > 1) || (bar.impressions.filter(item => item.impression === "liked").length === 0) ? ' Likes' : ' Like'}
+                                    </Typography>
+                                  </Box>
+                                )}
+                                <Box style={{display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center'}}>
+                                  {mode !== 'edit' && (
+                                    <IconButton
+                                      color="error"
+                                      onClick={() => handleDelete(bar.place_id)}
+                                    >
+                                      <DeleteIcon />
+                                    </IconButton>
+                                  )}
+                                  {isAdmin && (
+                                    <IconButton
+                                      color="error"
+                                      onClick={() => handleDelete(bar.place_id)}
+                                    >
+                                      <DeleteIcon />
+                                    </IconButton>
+                                  )}
+                                  {mode === 'edit' && !isAdmin && (
+                                      <IconButton color="error" onClick={() => {handleDislike(bar.place_id)}}>
+                                        <ThumbDownIcon />
+                                      </IconButton>
+                                  )}
+                                  {mode === 'edit' && (
+                                    <>
+                                      <Typography variant="caption">
+                                        {isAdmin ? null : bar.impressions.filter(item => item.impression === "disliked").length}
+                                      </Typography>
+                                      <Typography variant="caption">
+                                        {isAdmin && bar.impressions.filter(item => item.impression === "disliked").length}{(bar.impressions.filter(item => item.impression === "disliked").length > 1) || (bar.impressions.filter(item => item.impression === "disliked").length === 0) ? ' Dislikes' : ' Dislike'}
+                                      </Typography>
+                                    </>
+                                  )}
+                                </Box>
+                              </Box>
+                            </Box>
                           </Box>
                         )}
                       </Draggable>
@@ -233,29 +378,76 @@ function BarCrawlOrganizer() {
               </Droppable>
             </DragDropContext>
           )}
-          <Button
-            onClick={handleSaveCrawl}
-            disabled={selectedBars.length < 0 || barCrawlName === ""}
-            variant="contained"
-            sx={{
-              borderRadius: "50px",
-              backgroundColor: theme.primary,
-              color: "white",
-              padding: "5px 0px",
-              width: "calc(100% - 20px)",
-              textTransform: "none",
-              marginTop: "auto",
-              "&:hover": {
-                backgroundColor: "#444849",
-              },
-            }}
-            onMouseOver={(e) =>
-              (e.target.style.backgroundColor = darkenColor(theme.primary, 0.1))
-            }
-            onMouseOut={(e) => (e.target.style.backgroundColor = theme.primary)}
-          >
-            {!isLoading ? ('Save Crawl') : (<CircularProgress size="25px" sx={{ color: theme.white }} />)}
-          </Button>
+          {mode === 'edit' && !isAdmin ? (
+            <Box style={{display: 'flex', flexDirection: 'row', marginTop: "auto",}}>
+              <Button
+                variant="contained"
+                onClick={() => {handleNotAttend()}}
+                sx={{
+                  borderRadius: "50px",
+                  backgroundColor: "white",
+                  color: theme.primary,
+                  padding: "5px 0px",
+                  width: "calc(100% - 20px)",
+                  margin: '0px 10px 0px 0px',
+                  textTransform: "none",
+                  "&:hover": {
+                    backgroundColor: "#444849",
+                  },
+                }}
+                onMouseOver={(e) => (e.target.style.backgroundColor = "#f5f5f5")}
+                onMouseOut={(e) => (e.target.style.backgroundColor = "white")}
+              >
+                {!isLoading ? ('Not Attending') : (<CircularProgress size="25px" sx={{ color: theme.white }} />)}
+              </Button>
+              <Button
+                variant="contained"
+                onClick={() => {handleAttend()}}
+                sx={{
+                  borderRadius: "50px",
+                  backgroundColor: theme.primary,
+                  color: "white",
+                  padding: "5px 0px",
+                  width: "calc(100% - 20px)",
+                  margin: '0px 10px 0px 0px',
+                  textTransform: "none",
+                  "&:hover": {
+                    backgroundColor: "#444849",
+                  },
+                }}
+                onMouseOver={(e) =>
+                  (e.target.style.backgroundColor = darkenColor(theme.primary, 0.1))
+                }
+                onMouseOut={(e) => (e.target.style.backgroundColor = theme.primary)}
+              >
+                {!isLoading ? ('Attending') : (<CircularProgress size="25px" sx={{ color: theme.white }} />)}
+              </Button>
+            </Box>
+          ) : (
+            <Button
+              onClick={handleSaveCrawl}
+              disabled={selectedBars.length < 0 || barCrawlName === ""}
+              variant="contained"
+              sx={{
+                borderRadius: "50px",
+                backgroundColor: theme.primary,
+                color: "white",
+                padding: "5px 0px",
+                width: "calc(100% - 20px)",
+                textTransform: "none",
+                marginTop: "auto",
+                "&:hover": {
+                  backgroundColor: "#444849",
+                },
+              }}
+              onMouseOver={(e) =>
+                (e.target.style.backgroundColor = darkenColor(theme.primary, 0.1))
+              }
+              onMouseOut={(e) => (e.target.style.backgroundColor = theme.primary)}
+            >
+              {!isLoading ? ('Save Crawl') : (<CircularProgress size="25px" sx={{ color: theme.white }} />)}
+            </Button>
+          )}
         </Box>
       ) : (
         <>
@@ -266,7 +458,7 @@ function BarCrawlOrganizer() {
             sx={{
               position: "fixed",
               left: 10,
-              top: 200,
+              top: mode === 'edit' ? 50 : 200,
               zIndex: 1,
               "& .MuiSpeedDial-fab": {
                 backgroundColor: theme.primary,
@@ -281,22 +473,35 @@ function BarCrawlOrganizer() {
             anchor="left"
             open={drawerOpen}
             onClose={() => setDrawerOpen(false)}
-            sx={{
-              width: "90vw",
-              marginBottom: "16px",
-              borderTopLeftRadius: "10px",
-              borderTopRightRadius: "10px",
+            PaperProps={{
+              sx: {
+                width: "90vw",
+                height: '100vh'
+              },
             }}
           >
-            <Box sx={{ padding: "10px" }}>
-              <TextField
-                label="Name Your Crawl"
-                variant="outlined"
-                size="small"
-                value={barCrawlName}
-                onChange={handleBarCrawlNameChange}
-                sx={{ width: "calc(100% - 20px)", marginBottom: "10px" }}
-              />
+            <Box sx={{ padding: "10px", height: 'calc(100vh - 20px)' }}>
+              {mode === 'edit' && !isAdmin ? (
+                <Box style={{display: 'flex', flexDirection: 'column'}}>
+                  <Font
+                    text={crawl.barcrawlName}
+                    color={theme.primary}
+                    variant="h6"
+                    weight="bold"
+                    fontFamily="PrimaryOrig"
+                  />
+                  <Divider sx={{margin: '10px 0px'}} />
+                </Box>
+              ) : (
+                <TextField
+                  label="Name Your Crawl"
+                  variant="outlined"
+                  fullWidth
+                  value={barCrawlName}
+                  onChange={handleBarCrawlNameChange}
+                  sx={{ margin: "10px 0px" }}
+                />
+              )}
 
               {selectedBars.length > 0 && (
                 <DragDropContext onDragEnd={handleDragEnd}>
@@ -308,7 +513,6 @@ function BarCrawlOrganizer() {
                         style={{
                           display: "flex",
                           flexDirection: "column",
-                          paddingRight: "10px",
                           overflowY: "scroll",
                         }}
                       >
@@ -316,56 +520,103 @@ function BarCrawlOrganizer() {
                           <Draggable
                             key={bar.place_id}
                             draggableId={bar.place_id}
+                            isDragDisabled={mode === 'edit' && !isAdmin}
                             index={index}
                           >
                             {(provided) => (
-                              <Box
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                style={{
-                                  ...provided.draggableProps.style,
-                                  display: "flex",
-                                  flexDirection: "column",
-                                }}
-                              >
+                              <Box 
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              style={{
+                                ...provided.draggableProps.style,
+                                display: 'flex', 
+                                flexDirection: 'row',
+                                justifyContent: 'space-between',
+                                borderBottom: '1px solid #e8e8e8', 
+                                padding: '5px 0px'
+                              }}>
                                 <Box
-                                  sx={{
+                                  style={{
                                     display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
+                                    flexDirection: "column",
                                   }}
                                 >
-                                  <Typography
-                                    variant="subtitle1"
-                                    sx={{ fontWeight: "bold" }}
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      justifyContent: "space-between",
+                                      alignItems: "center",
+                                    }}
                                   >
-                                    {bar.name.length > 38
-                                      ? `${bar.name.slice(0, 35)}...`
-                                      : bar.name}
+                                    <Typography
+                                      variant="subtitle1"
+                                      sx={{ fontWeight: "bold" }}
+                                    >
+                                      {bar.name.length > 38
+                                        ? `${bar.name.slice(0, 35)}...`
+                                        : bar.name}
+                                    </Typography>
+                                    
+                                  </Box>
+                                  <Typography variant="body2">
+                                    Rating: {bar.rating || "N/A"}
                                   </Typography>
-                                  <IconButton
-                                    color="error"
-                                    onClick={() => handleDelete(bar.place_id)}
-                                  >
-                                    <DeleteIcon />
-                                  </IconButton>
+                                  <Typography variant="body2">
+                                    Price: {bar.price_level ? ('$'.repeat(bar.price_level)) : ('N/A')}
+                                  </Typography>
                                 </Box>
-                                <Typography variant="body2">
-                                  Rating: {bar.rating || "N/A"}
-                                </Typography>
-                                <Typography variant="body2">
-                                  Price: {bar.price_level ? ('$'.repeat(bar.price_level)) : ('N/A')}
-                                </Typography>
-                                <Divider
-                                  sx={{
-                                    marginTop: "10px",
-                                    marginBottom:
-                                      selectedBars.length - 1 === index
-                                        ? "10px"
-                                        : null,
-                                  }}
-                                />
+                                <Box style={{display: 'flex', flexDirection: 'column'}}>
+                                  <Box style={{ display: 'flex', flexDirection: 'row', gap: '10px' }}>
+                                    {mode === 'edit' && (
+                                      <Box style={{display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center'}}>
+                                        <IconButton 
+                                            sx={{visibility: isAdmin ? 'hidden' : 'visible'}} color="primary" onClick={() => {handleLike(bar.place_id)}}>
+                                          <ThumbUpIcon />
+                                        </IconButton>
+                                        <Typography variant="caption">
+                                          {isAdmin ? null : bar.impressions.filter(item => item.impression === "liked").length}
+                                        </Typography>
+                                        <Typography variant="caption">
+                                          {isAdmin && bar.impressions.filter(item => item.impression === "liked").length}{(bar.impressions.filter(item => item.impression === "liked").length > 1) || (bar.impressions.filter(item => item.impression === "liked").length === 0) ? ' Likes' : ' Like'}
+                                        </Typography>
+                                      </Box>
+                                    )}
+                                    <Box style={{display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center'}}>
+                                      {mode !== 'edit' && (
+                                        <IconButton
+                                          color="error"
+                                          onClick={() => handleDelete(bar.place_id)}
+                                        >
+                                          <DeleteIcon />
+                                        </IconButton>
+                                      )}
+                                      {isAdmin && (
+                                        <IconButton
+                                          color="error"
+                                          onClick={() => handleDelete(bar.place_id)}
+                                        >
+                                          <DeleteIcon />
+                                        </IconButton>
+                                      )}
+                                      {mode === 'edit' && !isAdmin && (
+                                          <IconButton color="error" onClick={() => {handleDislike(bar.place_id)}}>
+                                            <ThumbDownIcon />
+                                          </IconButton>
+                                      )}
+                                      {mode === 'edit' && (
+                                        <>
+                                          <Typography variant="caption">
+                                            {isAdmin ? null : bar.impressions.filter(item => item.impression === "disliked").length}
+                                          </Typography>
+                                          <Typography variant="caption">
+                                            {isAdmin && bar.impressions.filter(item => item.impression === "disliked").length}{(bar.impressions.filter(item => item.impression === "disliked").length > 1) || (bar.impressions.filter(item => item.impression === "disliked").length === 0) ? ' Dislikes' : ' Dislike'}
+                                          </Typography>
+                                        </>
+                                      )}
+                                    </Box>
+                                  </Box>
+                                </Box>
                               </Box>
                             )}
                           </Draggable>
@@ -376,29 +627,76 @@ function BarCrawlOrganizer() {
                   </Droppable>
                 </DragDropContext>
               )}
-              <Button
-                onClick={handleSaveCrawl}
-                disabled={selectedBars.length < 0 || barCrawlName === ""}
-                variant="contained"
-                sx={{
-                  borderRadius: "50px",
-                  backgroundColor: theme.primary,
-                  color: "white",
-                  padding: "5px 0px",
-                  width: "calc(100% - 20px)",
-                  textTransform: "none",
-                  marginTop: "auto",
-                  "&:hover": {
-                    backgroundColor: "#444849",
-                  },
-                }}
-                onMouseOver={(e) =>
-                  (e.target.style.backgroundColor = darkenColor(theme.primary, 0.1))
-                }
-                onMouseOut={(e) => (e.target.style.backgroundColor = theme.primary)}
-              >
-                {!isLoading ? ('Save Crawl') : (<CircularProgress size="25px" sx={{ color: theme.white }} />)}
-              </Button>
+              {mode === 'edit' && !isAdmin ? (
+                <Box style={{display: 'flex', flexDirection: 'row', marginTop: "auto", justifyContent: 'space-between'}}>
+                  <Button
+                    variant="contained"
+                    onClick={() => {handleNotAttend()}}
+                    sx={{
+                      borderRadius: "50px",
+                      backgroundColor: "white",
+                      color: theme.primary,
+                      padding: "5px 0px",
+                      width: "calc(50% - 10px)",
+                      margin: '20px 0px',
+                      textTransform: "none",
+                      "&:hover": {
+                        backgroundColor: "#444849",
+                      },
+                    }}
+                    onMouseOver={(e) => (e.target.style.backgroundColor = "#f5f5f5")}
+                    onMouseOut={(e) => (e.target.style.backgroundColor = "white")}
+                  >
+                    {!isLoading ? ('Not Attending') : (<CircularProgress size="25px" sx={{ color: theme.white }} />)}
+                  </Button>
+                  <Button
+                    variant="contained"
+                    onClick={() => {handleAttend()}}
+                    sx={{
+                      borderRadius: "50px",
+                      backgroundColor: theme.primary,
+                      color: "white",
+                      padding: "5px 0px",
+                      width: "calc(50% - 10px)",
+                      margin: '20px 0px',
+                      textTransform: "none",
+                      "&:hover": {
+                        backgroundColor: "#444849",
+                      },
+                    }}
+                    onMouseOver={(e) =>
+                      (e.target.style.backgroundColor = darkenColor(theme.primary, 0.1))
+                    }
+                    onMouseOut={(e) => (e.target.style.backgroundColor = theme.primary)}
+                  >
+                    {!isLoading ? ('Attending') : (<CircularProgress size="25px" sx={{ color: theme.white }} />)}
+                  </Button>
+                </Box>
+              ) : (
+                <Button
+                  onClick={handleSaveCrawl}
+                  disabled={selectedBars.length < 0 || barCrawlName === ""}
+                  variant="contained"
+                  sx={{
+                    borderRadius: "50px",
+                    backgroundColor: theme.primary,
+                    color: "white",
+                    padding: "5px 0px",
+                    width: "100%",
+                    textTransform: "none",
+                    marginTop: "20px",
+                    "&:hover": {
+                      backgroundColor: "#444849",
+                    },
+                  }}
+                  onMouseOver={(e) =>
+                    (e.target.style.backgroundColor = darkenColor(theme.primary, 0.1))
+                  }
+                  onMouseOut={(e) => (e.target.style.backgroundColor = theme.primary)}
+                >
+                  {!isLoading ? ('Save Crawl') : (<CircularProgress size="25px" sx={{ color: theme.white }} />)}
+                </Button>
+              )}
             </Box>
           </Drawer>
         </>

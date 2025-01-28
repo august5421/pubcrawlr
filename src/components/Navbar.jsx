@@ -143,7 +143,7 @@ function Navbar() {
                     >
                         <NavLink to="/">Create A Crawl</NavLink>
                     </Typography>
-                    {userBarCrawls.length > 0 && (
+                    {userBarCrawls?.length > 0 && (
                       <Typography variant="subtitle1"
                         sx={{cursor: 'pointer', marginTop: '15px'}}
                         onMouseOver={(e) => (e.target.style.backgroundColor = "#f5f5f5")}
