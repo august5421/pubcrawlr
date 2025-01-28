@@ -40,19 +40,23 @@ export const setBarResultsInBounds = (bars) => ({
 });
 export const setAlert = (payload) => ({
   type: 'SET_ALERT',
-  payload, 
+  payload,
 });
 export const setUserBarCrawls = (payload) => ({
   type: 'SET_USER_BAR_CRAWLS',
-  payload, 
+  payload,
 });
 export const setLocation = (payload) => ({
   type: 'SET_LOCATION',
-  payload, 
+  payload,
+});
+export const setLocationReq = (payload) => ({
+  type: 'SET_LOCATION_REQ',
+  payload,
 });
 export const setChangeInData = (payload) => ({
   type: 'SET_TRACK_NEW_CRAWLS',
-  payload, 
+  payload,
 });
 export const setModal = (open, content = null) => ({
   type: 'SET_MODAL',

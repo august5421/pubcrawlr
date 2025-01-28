@@ -81,3 +81,11 @@ export function getMarkerHTML(imageUrl, name, rating, price_level, place_id, inc
             ${includeAddBtn ? `<button id="pa-${place_id}" class="popup-btn" onclick="addBar('${place_id}')">Add</button>` : ''}
           </div>`;
 }
+
+export function uniqBy(a, key) {
+  return [
+    ...new Map(
+      a.map(x => [key(x), x])
+    ).values()
+  ]
+}

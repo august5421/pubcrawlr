@@ -30,7 +30,8 @@ const initialState = {
     message: '',
     severity: 'error',
   },
-  location: null
+  location: null,
+  locationReq: 0
 };
 
 const rootReducer = (state = initialState, action) => {
@@ -64,6 +65,11 @@ const rootReducer = (state = initialState, action) => {
       return {
         ...state,
         location: action.payload,
+      };
+    case 'SET_LOCATION_REQ':
+      return {
+        ...state,
+        locationReq: action.payload,
       };
     case 'SET_TRACK_NEW_CRAWLS':
       return {
