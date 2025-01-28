@@ -1,11 +1,8 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Box, List, Divider, TextField, Button } from "@mui/material";
-import { haversineDistance, getMarkerHTML } from "../functions/functions";
-import { setBarResults, setBarResultsInBounds, setLocation, setSelectedBars } from "../actions/actions";
-import userPin from "../../public/assets/images/personPin.png";
-import mapPin from "../../public/assets/images/noPersonPin.png";
-import selectedMapPin from "../../public/assets/images/noPersonSelectedPin.png";
+import { haversineDistance, getMarkerHTML, uniqBy } from "../functions/functions";
+import { setBarResults, setBarResultsInBounds, setLocation, setSelectedBars, setLocationReq } from "../actions/actions";
 import MyLocationIcon from "@mui/icons-material/MyLocation";
 import BarCard from "../components/BarCard";
 import BarCrawlOrganizer from "../components/BarCrawlOrganizer";
@@ -13,6 +10,7 @@ import VibeChecker from "../components/VibeChecker";
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import MapLibreGlDirections, { LoadingIndicatorControl } from "@maplibre/maplibre-gl-directions";
+import { UpdateSearchControl } from '../utilities/CustomMapControls';
 
 function MainPage() {
   const dispatch = useDispatch();
@@ -21,6 +19,7 @@ function MainPage() {
   const isTablet = useSelector((state) => state.isTablet);
   const isLarge = useSelector((state) => state.isLarge);
   const location = useSelector((state) => state.location);
+  const locationReq = useSelector((state) => state.locationReq);
   const selectedBars = useSelector((state) => state.selectedBars);
   const barResults = useSelector((state) => state.barResults);
   const barResultsInBounds = useSelector((state) => state.barResultsInBounds);
@@ -28,12 +27,12 @@ function MainPage() {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [nearbyLoaded, setNearbyLoaded] = useState(false);
   const [autocomplete, setAutocomplete] = useState(null);
-  const [locationReq, setLocationReq] = useState(0);
   const [vibeSearch, setVibeSearch] = useState(
     "bar OR pub OR drinks OR cocktails"
   );
   const [map, setMap] = useState(null);
   const [directions, setDirections] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
 
   //render map
   useEffect(() => {
@@ -47,7 +46,18 @@ function MainPage() {
         zoom: 14
       });
       newMap.addControl(new maplibregl.NavigationControl(), 'top-right');
+      newMap.addControl(new UpdateSearchControl(), 'top-right');
+
+      newMap.on('load', () => {
+        const newDirections = new MapLibreGlDirections(newMap, {
+          profile: 'foot'
+        });
+        newMap.addControl(new LoadingIndicatorControl(newDirections));
+        setDirections(newDirections);
+      });
+
       setMap(newMap);
+      window.locationReq = locationReq;
       initializeGoogleApi();
     }
   }, [location, mapLoaded]);
@@ -71,16 +81,16 @@ function MainPage() {
             latitude: place.geometry.location.lat(),
             longitude: place.geometry.location.lng(),
           };
-          setLocationReq(locationReq + 1);
-          setTimeout(() => {
-            dispatch(setLocation(newLocation));
-          }, 100)
+
+          dispatch(setLocation(newLocation));
+          setNearbyLoaded(false);
+          updateLocationReq();
         }
       });
 
       setAutocomplete(autocomplete);
     }
-  }, [mapLoaded, location]);
+  }, [mapLoaded]);
 
   //get nearby bars
   useEffect(() => {
@@ -98,6 +108,7 @@ function MainPage() {
 
         service.nearbySearch(request, (results, status) => {
           if (status === window.google.maps.places.PlacesServiceStatus.OK) {
+
             const barsWithDistance = results.map((place) => {
               const distance = haversineDistance(
                 location.latitude,
@@ -114,33 +125,32 @@ function MainPage() {
             const sortedBars = barsWithDistance.sort(
               (a, b) => a.distance - b.distance
             );
-            dispatch(setBarResults(sortedBars));
-            dispatch(setBarResultsInBounds(sortedBars));
+
+            const filtered = uniqBy([...sortedBars, ...barResults], x => x.place_id);
+
+            dispatch(setBarResults(filtered));
+            dispatch(setBarResultsInBounds(filtered));
             setNearbyLoaded(true);
           } else {
             console.error("PlacesService failed:", status);
+            setNearbyLoaded(true);
           }
         });
       }
     }
-  }, [mapLoaded, location, vibeSearch, locationReq]);
+  }, [locationReq]);
 
   //  map pins out
   useEffect(() => {
     if (mapLoaded && location && nearbyLoaded) {
-      const newMap = map;
       //add user marker
-      new maplibregl.Marker({
-        color: "#42f55a"
-      }).setLngLat([location.longitude, location.latitude]).addTo(newMap);
+      if (userLocation) {
+        new maplibregl.Marker({
+          color: "#42f55a"
+        }).setLngLat(userLocation).addTo(map);
+      }
 
       let bounds = new maplibregl.LngLatBounds();
-
-      const newDirections = new MapLibreGlDirections(newMap, {
-        profile: 'foot'
-      });
-      map.addControl(new LoadingIndicatorControl(newDirections));
-      setDirections(newDirections);
 
       // add bar result markers
       barResults.forEach((x) => {
@@ -156,11 +166,11 @@ function MainPage() {
           className: 'marker'
         }).setLngLat([x.geometry.location.lng(), x.geometry.location.lat()])
           .setPopup(new maplibregl.Popup().setHTML(getMarkerHTML(photoUrl, x.name, x.rating, x.price_level, x.place_id, true)))
-          .addTo(newMap);
+          .addTo(map);
 
         // zoom to marker on click
         marker.getElement().addEventListener('click', () => {
-          newMap.flyTo({
+          map.flyTo({
             center: [x.geometry.location.lng(), x.geometry.location.lat()],
             speed: 0.5
           });
@@ -182,11 +192,19 @@ function MainPage() {
       });
 
       // zoom to fit results
-      newMap.fitBounds(bounds);
+      if (isAutocomplete()) {
+        map.flyTo({
+          center: [location.longitude, location.latitude],
+          speed: 0.5,
+          zoom: 13
+        });
+      } else {
+        map.fitBounds(bounds);
+      }
 
       // on zoom, set bar results in map bounds
-      newMap.on('moveend', () => {
-        let mapContainer = newMap.getContainer();
+      map.on('moveend', () => {
+        let mapContainer = map.getContainer();
         let markerElements = [...mapContainer.getElementsByClassName('marker')];
         let rect = mapContainer.getBoundingClientRect();
 
@@ -197,9 +215,8 @@ function MainPage() {
         });
         dispatch(setBarResultsInBounds(visiblePlaces));
       });
-      setMap(newMap);
     }
-  }, [mapLoaded, location, nearbyLoaded]);
+  }, [nearbyLoaded]);
 
   const handleUseLocation = () => {
     if (navigator.geolocation) {
@@ -207,13 +224,14 @@ function MainPage() {
         (position) => {
           const { latitude, longitude } = position.coords;
           dispatch(setLocation({ latitude, longitude }));
+          setUserLocation([longitude, latitude]);
         },
         (error) => {
           console.error("Error getting location:", error);
         }
       );
     }
-    setLocationReq(locationReq + 1);
+    updateLocationReq();
   };
 
   const initializeGoogleApi = () => {
@@ -239,11 +257,31 @@ function MainPage() {
     return !(r2.left > r1.right || r2.right < r1.left || r2.top > r1.bottom || r2.bottom < r1.top);
   };
 
+  const updateLocationReq = () => {
+    const newValue = window.locationReq + 1;
+    window.locationReq = newValue;
+    dispatch(setLocationReq(newValue));
+  }
+
+  const isAutocomplete = () => {
+    if (!autocomplete || !autocomplete.getPlace()) return false;
+    const autoLocation = autocomplete?.getPlace().geometry?.location;
+    return location.latitude === autoLocation.lat() && location.longitude === autoLocation.lng();
+  }
+
   // must be global for popup html
   window.addBar = (place_id) => {
     const selectedBar = barResults.find(x => x.place_id === place_id);
     dispatch(setSelectedBars([...selectedBars, selectedBar]));
-  }
+  };
+
+  window.updateSearchClicked = () => {
+    let center = map.getCenter();
+
+    dispatch(setLocation({ latitude: center.lat, longitude: center.lng }));
+    setNearbyLoaded(false);
+    updateLocationReq();
+  };
 
   // selectedBars listener
   useEffect(() => {

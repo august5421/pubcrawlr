@@ -1,4 +1,5 @@
-body, html {
+body,
+html {
   margin: 0;
   overflow-x: hidden !important;
   overflow-y: hidden !important;
@@ -20,7 +21,7 @@ body, html {
 
 .css-4dq96w-MuiCardContent-root:last-child {
   padding-bottom: 10px !important;
-} 
+}
 
 .popup-btn {
   font-family: "Roboto", "Helvetica", "Arial", sans-serif;
@@ -61,4 +62,16 @@ body, html {
 
 .marker:hover {
   cursor: pointer;
+}
+
+.search-img {
+  background-image: url('../public/assets/images/travel-explore.svg');
+}
+
+.maplibregl-ctrl-top-right .maplibregl-ctrl {
+  margin: 10px 20px 0 0;
+}
+
+.maplibregl-ctrl-bottom-right .maplibregl-ctrl {
+  margin-right: 20px;
 }
