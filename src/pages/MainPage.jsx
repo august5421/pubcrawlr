@@ -2,15 +2,16 @@ import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Box, List, Divider, TextField, Button } from "@mui/material";
 import { haversineDistance, getMarkerHTML, uniqBy } from "../functions/functions";
-import { setBarResults, setBarResultsInBounds, setLocation, setSelectedBars, setLocationReq } from "../actions/actions";
+import { setBarResults, setBarResultsInBounds, setLocation, setSelectedBars, setLocationReq, setVibeDialog, setSelectedVibes } from "../actions/actions";
 import MyLocationIcon from "@mui/icons-material/MyLocation";
 import BarCard from "../components/BarCard";
 import BarCrawlOrganizer from "../components/BarCrawlOrganizer";
-import VibeChecker from "../components/VibeChecker";
+import VibeDialog from "../components/VibeDialog";
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import MapLibreGlDirections, { LoadingIndicatorControl } from "@maplibre/maplibre-gl-directions";
-import { UpdateSearchControl } from '../utilities/CustomMapControls';
+import { UpdateSearchControl, VibeSettingsControl } from '../utilities/CustomMapControls';
+import { Vibes } from '../models/MainModels';
 
 function MainPage() {
   const dispatch = useDispatch();
@@ -23,16 +24,16 @@ function MainPage() {
   const selectedBars = useSelector((state) => state.selectedBars);
   const barResults = useSelector((state) => state.barResults);
   const barResultsInBounds = useSelector((state) => state.barResultsInBounds);
+  const vibeDialogOpen = useSelector((state) => state.vibeDialogOpen);
+  const selectedVibes = useSelector((state) => state.selectedVibes);
 
   const [mapLoaded, setMapLoaded] = useState(false);
   const [nearbyLoaded, setNearbyLoaded] = useState(false);
   const [autocomplete, setAutocomplete] = useState(null);
-  const [vibeSearch, setVibeSearch] = useState(
-    "bar OR pub OR drinks OR cocktails"
-  );
   const [map, setMap] = useState(null);
   const [directions, setDirections] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
+  const [hardRefresh, setHardRefresh] = useState(false);
 
   //render map
   useEffect(() => {
@@ -47,6 +48,7 @@ function MainPage() {
       });
       newMap.addControl(new maplibregl.NavigationControl(), 'top-right');
       newMap.addControl(new UpdateSearchControl(), 'top-right');
+      newMap.addControl(new VibeSettingsControl(), 'top-right');
 
       newMap.on('load', () => {
         const newDirections = new MapLibreGlDirections(newMap, {
@@ -98,12 +100,13 @@ function MainPage() {
       const googleMap = new window.google.maps.Map(document.getElementById("gmap"));
 
       if (window.google && window.google.maps && window.google.maps.places) {
+
         const service = new window.google.maps.places.PlacesService(googleMap);
         const request = {
           location: { lat: location.latitude, lng: location.longitude },
           rankBy: google.maps.places.RankBy.DISTANCE,
           type: "bar",
-          keyword: vibeSearch,
+          keyword: selectedVibes.length > 0 ? Vibes.getKeyword(selectedVibes) : Vibes.defaultKeyword,
         };
 
         service.nearbySearch(request, (results, status) => {
@@ -126,19 +129,24 @@ function MainPage() {
               (a, b) => a.distance - b.distance
             );
 
-            const filtered = uniqBy([...sortedBars, ...barResults], x => x.place_id);
+            if (hardRefresh) {
+              dispatch(setBarResults(sortedBars));
+              dispatch(setBarResultsInBounds(sortedBars));
+            } else {
+              const filtered = uniqBy([...sortedBars, ...barResults], x => x.place_id);
+              dispatch(setBarResults(filtered));
+              dispatch(setBarResultsInBounds(filtered));
+            }
 
-            dispatch(setBarResults(filtered));
-            dispatch(setBarResultsInBounds(filtered));
             setNearbyLoaded(true);
           } else {
-            console.error("PlacesService failed:", status);
+            console.error(`PlacesService failed for keyword: ${selectedVibes.length > 0 ? Vibes.getKeyword(selectedVibes) : Vibes.defaultKeyword}`, status);
             setNearbyLoaded(true);
           }
         });
       }
     }
-  }, [locationReq]);
+  }, [locationReq, hardRefresh]);
 
   //  map pins out
   useEffect(() => {
@@ -148,6 +156,11 @@ function MainPage() {
         new maplibregl.Marker({
           color: "#42f55a"
         }).setLngLat(userLocation).addTo(map);
+      }
+
+      if (hardRefresh) {
+        clearExistingMarkers();
+        setHardRefresh(false);
       }
 
       let bounds = new maplibregl.LngLatBounds();
@@ -218,6 +231,13 @@ function MainPage() {
     }
   }, [nearbyLoaded]);
 
+  const clearExistingMarkers = () => {
+    let markers = [...map.getContainer().getElementsByClassName('marker')];
+    markers.forEach(x => {
+      x.remove();
+    });
+  };
+
   const handleUseLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -269,6 +289,14 @@ function MainPage() {
     return location.latitude === autoLocation.lat() && location.longitude === autoLocation.lng();
   }
 
+  const updateSelectedVibes = (selections) => {
+    dispatch(setSelectedVibes(selections));
+    dispatch(setSelectedBars([]));
+    setHardRefresh(true);
+    setNearbyLoaded(false);
+    updateLocationReq();
+  }
+
   // must be global for popup html
   window.addBar = (place_id) => {
     const selectedBar = barResults.find(x => x.place_id === place_id);
@@ -282,6 +310,10 @@ function MainPage() {
     setNearbyLoaded(false);
     updateLocationReq();
   };
+
+  window.openVibeSettings = () => {
+    dispatch(setVibeDialog(true));
+  }
 
   // selectedBars listener
   useEffect(() => {
@@ -327,6 +359,7 @@ function MainPage() {
         width: "100%",
       }}
     >
+      <VibeDialog selectedVibes={selectedVibes} theme={theme} setSelections={updateSelectedVibes} />
       {(isMobile || isTablet) && (
         <Box
           style={{
@@ -368,7 +401,6 @@ function MainPage() {
             <MyLocationIcon sx={{ marginRight: "10px" }} /> Use my current
             location
           </Button>
-          <VibeChecker vibeSearch={vibeSearch} setVibeSearch={setVibeSearch} />
         </Box>
       )}
 
@@ -456,10 +488,6 @@ function MainPage() {
               <MyLocationIcon sx={{ marginRight: "10px" }} /> Use my current
               location
             </Button>
-            <VibeChecker
-              vibeSearch={vibeSearch}
-              setVibeSearch={setVibeSearch}
-            />
           </Box>
 
           <Divider

@@ -73,6 +73,10 @@ a {
   background-image: url('../public/assets/images/travel-explore.svg');
 }
 
+.settings-img {
+  background-image: url('../public/assets/images/settings.svg');
+}
+
 .maplibregl-ctrl-top-right .maplibregl-ctrl {
   margin: 10px 20px 0 0;
 }

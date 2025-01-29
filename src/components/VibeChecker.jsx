@@ -7,28 +7,14 @@ import {
   IconButton,
 } from "@mui/material";
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import LocalDiningIcon from '@mui/icons-material/LocalDining';
-import NightlifeIcon from '@mui/icons-material/Nightlife';
-import LooksIcon from '@mui/icons-material/Looks';
-import WineBarIcon from '@mui/icons-material/WineBar';
-import SportsBarIcon from '@mui/icons-material/SportsBar';
-import LiquorIcon from '@mui/icons-material/Liquor';
+import { Vibes } from '../models/MainModels';
 import { useDispatch, useSelector } from "react-redux";
 
 function VibeChecker({ setVibeSearch }) {
   const dispatch = useDispatch();
   const theme = useSelector((state) => state.theme);
   const [moreOptions, setMoreOptions] = useState(false);
-  const [selectedVibe, setSelectedVibe] = useState(null); 
-
-  const vibes = [
-    { Name: 'Serves Food', Icon: <LocalDiningIcon /> },
-    { Name: 'Night Clubs', Icon: <NightlifeIcon /> },
-    { Name: 'LGBTQ+', Icon: <LooksIcon /> },
-    { Name: 'Winery', Icon: <WineBarIcon /> },
-    { Name: 'Brewery', Icon: <SportsBarIcon /> },
-    { Name: 'Distillery', Icon: <LiquorIcon /> },
-  ];
+  const [selectedVibe, setSelectedVibe] = useState(null);
 
   const handleVibeCheck = (vibeName) => {
     if (selectedVibe === vibeName) {
@@ -90,7 +76,7 @@ function VibeChecker({ setVibeSearch }) {
             justifyContent: 'space-between',
           }}
         >
-          {vibes.map((vibe) => (
+          {Vibes.options.map((vibe) => (
             <Box
               key={vibe.Name}
               style={{ display: 'flex', flexDirection: 'column' }}
