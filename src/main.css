@@ -10,6 +10,12 @@ a {
   color: unset !important;
 }
 
+a:hover {
+  text-decoration: none !important;
+  color: unset !important;
+  background-color: transparent !important;
+}
+
 ::-webkit-scrollbar {
   display: none;
 }
@@ -79,4 +85,9 @@ a {
 
 .maplibregl-ctrl-bottom-right .maplibregl-ctrl {
   margin-right: 20px;
+}
+
+.css-1wsi274-MuiPickersToolbar-content {
+  align-content: flex-end !important;
+  align-items: flex-end !important;
 }

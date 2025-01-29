@@ -8,7 +8,7 @@ import { getMarkerHTML } from '../functions/functions';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import MapLibreGlDirections, { LoadingIndicatorControl } from "@maplibre/maplibre-gl-directions";
-import BarCrawlOrganizer from '../components/BarCrawlOrganizer';
+import BarCrawlOrganizerRoot from '../components/BarCrawlOrganizerRoot';
 import { setIsAdmin, setSelectedBars } from '../actions/actions';
 
 function SingleCrawlPage() {
@@ -120,7 +120,7 @@ function SingleCrawlPage() {
         width: "100%",
       }}
     >
-      {crawlLoaded && <BarCrawlOrganizer crawl={crawl} mode="edit" slug={slug} setCrawl={setCrawl} />}
+      {crawlLoaded && <BarCrawlOrganizerRoot crawl={crawl} mode="edit" slug={slug} setCrawl={setCrawl} />}
       {!isMobile && !isTablet ?  (
         <Box
           style={{
