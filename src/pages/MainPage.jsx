@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Box, List, Divider, TextField, Button } from "@mui/material";
+import { Box, List, Divider, TextField, Button, Collapse } from "@mui/material";
 import { haversineDistance, getMarkerHTML, uniqBy } from "../functions/functions";
 import { setBarResults, setBarResultsInBounds, setLocation, setSelectedBars, setLocationReq, setVibeDialog, setSelectedVibes } from "../actions/actions";
 import MyLocationIcon from "@mui/icons-material/MyLocation";
 import BarCard from "../components/BarCard";
-import BarCrawlOrganizer from "../components/BarCrawlOrganizer";
+import BarCrawlOrganizerRoot from "../components/BarCrawlOrganizerRoot";
 import VibeDialog from "../components/VibeDialog";
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -519,9 +519,9 @@ function MainPage() {
         <Box id="map" style={{ width: "100%", height: "calc(100vh - 50px)" }} />
         <Box id="gmap" style={{ display: "none" }} />
       </Box>
-      {selectedBars.length > 0 && (
-        <BarCrawlOrganizer />
-      )}
+      <Collapse in={selectedBars.length > 0} orientation="horizontal">
+        <BarCrawlOrganizerRoot />
+      </Collapse>
     </Box>
   );
 }
