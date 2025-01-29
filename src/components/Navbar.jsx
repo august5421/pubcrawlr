@@ -54,7 +54,7 @@ function Navbar() {
       }}
     >
       <NavLink style={{ cursor: "pointer" }} to="/">
-        <Font text="Pubcrawlr" color={theme.primary} variant="h4" weight="bold" fontFamily="PrimaryOrig"/>
+        <Font text="Pubcrawlr" color={theme.primary} variant="h4" weight="bold" fontFamily="PrimaryOrig" />
       </NavLink>
       <Fade in={showAuth}>
         <Box style={{ display: "flex", gap: "10px", alignItems: "center" }}>
@@ -93,9 +93,9 @@ function Navbar() {
             </>
           ) : (
             <>
-              <Box sx={{position: 'relative'}}>
+              <Box sx={{ position: 'relative' }}>
                 {activeUser.UserAvatarType !== 'text' ? (
-                  <Avatar2 style={{cursor: "pointer"}} onClick={toggleDrawer(true)} size={40} name={activeUser.UserId} variant={activeUser.UserAvatarType} />
+                  <Avatar2 style={{ cursor: "pointer" }} onClick={toggleDrawer(true)} size={40} name={activeUser.UserId} variant={activeUser.UserAvatarType} />
                 ) : (
                   <Avatar
                     onClick={toggleDrawer(true)}
@@ -106,7 +106,7 @@ function Navbar() {
                     }}
                   >
                     {stringAvatar(activeUser.Name)}
-                    
+
                   </Avatar>
                 )}
                 <Badge
@@ -120,7 +120,7 @@ function Navbar() {
                   }}
                 />
               </Box>
-              <Drawer sx={{width: isMobile ? '80%' : '400px'}} anchor="right" open={drawerOpen} onClose={toggleDrawer(false)}>
+              <Drawer sx={{ width: isMobile ? '80%' : '400px' }} anchor="right" open={drawerOpen} onClose={toggleDrawer(false)}>
                 <Box
                   style={{
                     width: 250,
@@ -131,55 +131,55 @@ function Navbar() {
                     justifyContent: "space-between",
                   }}
                 >
-                  <Box style={{display: 'flex', flexDirection: 'column'}}>
-                    <Typography variant="h6" style={{ marginBottom: "20px", textAlign: 'center', marginBottom: '20px' }}>
-                        Welcome, {activeUser.Name || "User"}
+                  <Box style={{ display: 'flex', flexDirection: 'column' }}>
+                    <Typography variant="h6" style={{ marginBottom: "20px", textAlign: 'center' }}>
+                      Welcome, {activeUser.Name || "User"}
                     </Typography>
                     <Divider />
                     <Typography variant="subtitle1"
-                      sx={{cursor: 'pointer', marginTop: '15px'}}
+                      sx={{ cursor: 'pointer', marginTop: '15px' }}
                       onMouseOver={(e) => (e.target.style.backgroundColor = "#f5f5f5")}
                       onMouseOut={(e) => (e.target.style.backgroundColor = "white")}
                     >
-                        <NavLink to="/">Create A Crawl</NavLink>
+                      <NavLink to="/">Create A Crawl</NavLink>
                     </Typography>
                     {userBarCrawls?.length > 0 && (
                       <Typography variant="subtitle1"
-                        sx={{cursor: 'pointer', marginTop: '15px'}}
+                        sx={{ cursor: 'pointer', marginTop: '15px' }}
                         onMouseOver={(e) => (e.target.style.backgroundColor = "#f5f5f5")}
                         onMouseOut={(e) => (e.target.style.backgroundColor = "white")}
                       >
-                          <NavLink to="/Crawls">My Crawls</NavLink>
+                        <NavLink to="/Crawls">My Crawls</NavLink>
                       </Typography>
                     )}
                     <Typography variant="subtitle1"
-                      sx={{cursor: 'pointer', marginTop: '15px', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+                      sx={{ cursor: 'pointer', marginTop: '15px', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
                       onMouseOver={(e) => (e.target.style.backgroundColor = "#f5f5f5")}
                       onMouseOut={(e) => (e.target.style.backgroundColor = "white")}
                     >
-                        <NavLink to="/Account">Account & Friends</NavLink>
-                        <Badge badgeContent={unseenRequests} color="error" invisible={unseenRequests === 0} />
+                      <NavLink to="/Account">Account & Friends</NavLink>
+                      <Badge badgeContent={unseenRequests} color="error" invisible={unseenRequests === 0} />
                     </Typography>
-                    
+
                   </Box>
-                  
+
                   <Box>
                     <Divider />
                     <Button
-                        variant="contained"
-                        style={{
-                            borderRadius: "50px",
-                            width: '100%',
-                            backgroundColor: theme.primary,
-                            color: "white",
-                            padding: "10px 20px",
-                            textTransform: "none",
-                            alignSelf: "flex-end",
-                            marginTop: '20px',
-                        }}
-                        onClick={handleLogout}
+                      variant="contained"
+                      style={{
+                        borderRadius: "50px",
+                        width: '100%',
+                        backgroundColor: theme.primary,
+                        color: "white",
+                        padding: "10px 20px",
+                        textTransform: "none",
+                        alignSelf: "flex-end",
+                        marginTop: '20px',
+                      }}
+                      onClick={handleLogout}
                     >
-                        Logout
+                      Logout
                     </Button>
                   </Box>
                 </Box>
