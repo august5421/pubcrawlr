@@ -2,7 +2,7 @@ const initialState = {
   isMobile: false,
   isTablet: false,
   isLarge: false,
-  isLoading: false,
+  isLoading: {Name: '', Load: false},
   isAdmin: false,
   modalState: {
     open: false,
@@ -51,11 +51,16 @@ const rootReducer = (state = initialState, action) => {
         ...state,
         isLarge: action.payload,
       };
-    case 'SET_IS_LOADING':
+    case 'SET_IS_LOADING': {
+      const { key, value } = action.payload;
       return {
-        ...state,
-        isLoading: action.payload,
+          ...state,
+          isLoading: {
+              ...state.isLoading,
+              [key]: value,
+          },
       };
+    }
     case 'SET_IS_ADMIN':
       return {
         ...state,

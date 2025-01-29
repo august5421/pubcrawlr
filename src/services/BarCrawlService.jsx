@@ -1,12 +1,16 @@
-import { collection, addDoc, serverTimestamp, getDoc, doc, deleteDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, getDoc, setDoc, doc, deleteDoc, updateDoc, arrayUnion } from "firebase/firestore";
 import { db } from '../config/Firebase.jsx';
 
-export async function saveBarCrawl(userID, barCrawlInfo, crawlName, startDate, endData, intamacyLevel) {
+export async function saveBarCrawl(userID, barCrawlInfo, crawlName, startDate, endDate, intamacyLevel, crawlID = null) {
   try {
     const simplifiedBars = barCrawlInfo.map(bar => {
-      const barImageUrl = bar.photos[0].getUrl({ maxHeight: bar.photos[0].height })
-      const barLat = bar.geometry.location.lat()
-      const barLng = bar.geometry.location.lng()
+      const barImageUrl = 
+        bar.photos && bar.photos.length > 0 
+          ? bar.photos[0].getUrl({ maxHeight: bar.photos[0].height }) 
+          : bar.imageUrl;
+      const barLat = bar.geometry ? bar.geometry.location.lat() : bar.barLat;
+      const barLng = bar.geometry ? bar.geometry.location.lng() : bar.barLng;
+      
       return {
         name: bar.name || 'N/A',
         place_id: bar.place_id || 'N/A',
@@ -20,21 +24,35 @@ export async function saveBarCrawl(userID, barCrawlInfo, crawlName, startDate, e
       };
     });
 
-    const docRef = await addDoc(collection(db, "BarCrawls"), {
-      barcrawlName: crawlName,
-      barCrawlInfo: simplifiedBars,
-      userID: userID,
-      createDate: serverTimestamp(),
-      invitees: [],
-      admins: [userID],
-      startDate: startDate,
-      endDate: endData,
-      intamacyLevel: intamacyLevel
-    });
+    if (crawlID) {
+      const docRef = doc(db, "BarCrawls", crawlID);
+      await setDoc(docRef, {
+        barcrawlName: crawlName,
+        barCrawlInfo: simplifiedBars,
+        startDate: startDate,
+        endDate: endDate,
+        intamacyLevel: intamacyLevel,
+        updatedAt: serverTimestamp()
+      }, { merge: true }); 
 
-    return docRef.id;
+      return crawlID;
+    } else {
+      const docRef = await addDoc(collection(db, "BarCrawls"), {
+        barcrawlName: crawlName,
+        barCrawlInfo: simplifiedBars,
+        userID: userID,
+        createDate: serverTimestamp(),
+        invitees: [],
+        admins: [userID],
+        startDate: startDate,
+        endDate: endDate,
+        intamacyLevel: intamacyLevel
+      });
+
+      return docRef.id;
+    }
   } catch (e) {
-    console.error("Error adding document: ", e);
+    console.error("Error saving bar crawl: ", e);
   }
 };
 
@@ -79,9 +97,18 @@ export async function addImpression(crawlId, placeId, impressionData) {
 
       const updatedBars = barCrawlData.barCrawlInfo.map(bar => {
         if (bar.place_id === placeId) {
+          const existingImpressions = bar.impressions || [];
+          const updatedImpressions = existingImpressions.map(imp =>
+            imp.UserID === impressionData.UserID ? impressionData : imp
+          );
+
+          const finalImpressions = existingImpressions.some(imp => imp.UserID === impressionData.UserID)
+            ? updatedImpressions
+            : [...updatedImpressions, impressionData];
+
           return {
             ...bar,
-            impressions: [...bar.impressions, impressionData], 
+            impressions: finalImpressions,
           };
         }
         return bar;
@@ -97,6 +124,7 @@ export async function addImpression(crawlId, placeId, impressionData) {
     console.error('Error adding impression:', e);
   }
 }
+
 
 export async function addAttendance(crawlId, attendee) { 
   try {

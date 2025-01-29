@@ -31,12 +31,13 @@ import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 
-function BarCrawlOrganizerMobile({crawl, mode, handleDelete, handleDragEnd, handleBarCrawlNameChange, handleLike, handleDislike, handleAttend, handleNotAttend, handleSaveCrawl, handleIntamacyLevelChange, barCrawlName, drawerOpen, setDrawerOpen, startDate, endDate, intamacyLevel, handleStartDateChange, handleEndDateChange}) {
+function BarCrawlOrganizerMobile({crawl, mode, handleDelete, handleDragEnd, handleBarCrawlNameChange, handleImpression, handleToggleAttendance, handleSaveCrawl, handleIntamacyLevelChange, barCrawlName, drawerOpen, setDrawerOpen, startDate, endDate, intamacyLevel, handleStartDateChange, handleEndDateChange}) {
   const dispatch = useDispatch();
   const theme = useSelector((state) => state.theme);
   const isLoading = useSelector((state) => state.isLoading);
   const selectedBars = useSelector((state) => state.selectedBars);
   const isAdmin = useSelector((state) => state.isAdmin);
+  const activeUser = useSelector((state) => state.activeUser);
   
   return (
     <>
@@ -69,59 +70,72 @@ function BarCrawlOrganizerMobile({crawl, mode, handleDelete, handleDragEnd, hand
             },
         }}
         >
-        <Box sx={{ padding: "10px", height: 'calc(100vh - 20px)' }}>
+        <Box sx={{ padding: "10px", height: 'calc(100vh - 20px)', position: 'relative'}}>
         {mode === 'edit' && !isAdmin ? (
             <Box style={{display: 'flex', flexDirection: 'column'}}>
             <Font
-                text={crawl.barcrawlName}
-                color={theme.primary}
-                variant="h6"
-                weight="bold"
-                fontFamily="PrimaryOrig"
+              text={crawl.barcrawlName}
+              color={theme.primary}
+              variant="h6"
+              weight="bold"
+              fontFamily="PrimaryOrig"
             />
             <Box style={{display: 'flex', flexDirection: 'row'}}>
-                <Box style={{display: 'flex', flexDirection: 'column', flex: 1}}>
+              <Box style={{display: 'flex', flexDirection: 'column', flex: 1}}>
                 <CalendarMonthIcon />
-                </Box>
-                <Box style={{display: 'flex', flexDirection: 'column', flex: 9}}>
-                <Typography variant="subtitle1">
-                    {new Date(crawl.startDate.seconds * 1000).toLocaleString()}
-                </Typography>
-                </Box>
+              </Box>
+              <Box style={{display: 'flex', flexDirection: 'column', flex: 9}}>
+              <Typography variant="subtitle1">
+                {new Date(crawl.startDate.seconds * 1000).toLocaleString(undefined, {
+                  month: "long",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "numeric",
+                  hour12: true,
+                })}
+                {crawl.endDate && (` - ${new Date(crawl.endDate.seconds * 1000).toLocaleString(undefined, {
+                  month: "long",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "numeric",
+                  hour12: true,
+                })}`)}
+              </Typography>
+  
+              </Box>
             </Box>
             <Box style={{display: 'flex', flexDirection: 'row'}}>
-                <Box style={{display: 'flex', flexDirection: 'column', flex: 1}}>
+              <Box style={{display: 'flex', flexDirection: 'column', flex: 1}}>
                 {crawl.intamacyLevel === 'Public' && <PublicIcon />}
                 {crawl.intamacyLevel === 'Private' && <LockPersonIcon />}
                 {crawl.intamacyLevel === 'Friends' && <GroupsIcon />}
-                </Box>
-                <Box style={{display: 'flex', flexDirection: 'column', flex: 9}}>
+              </Box>
+              <Box style={{display: 'flex', flexDirection: 'column', flex: 9}}>
                 <Typography variant="subtitle1">
-                    {crawl.intamacyLevel}
+                  {crawl.intamacyLevel}
                 </Typography>
-                </Box>
+              </Box>
             </Box>
             <Box style={{display: 'flex', flexDirection: 'row'}}>
-                <Box style={{display: 'flex', flexDirection: 'column', flex: 1}}>
+              <Box style={{display: 'flex', flexDirection: 'column', flex: 1}}>
                 <GroupIcon />
-                </Box>
-                <Box style={{display: 'flex', flexDirection: 'column', flex: 9}}>
+              </Box>
+              <Box style={{display: 'flex', flexDirection: 'column', flex: 9}}>
                 <Typography variant="subtitle1">
-                    {(crawl.invitees.filter(item => item.attendance === true).length > 1) || (crawl.invitees.filter(item => item.attendance === true).length === 0) ? `${crawl.invitees.filter(item => item.attendance === true).length} People Attending` : `${crawl.invitees.filter(item => item.attendance === true).length} Person Attending`}
+                  {(crawl.invitees.filter(item => item.attendance === true).length > 1) || (crawl.invitees.filter(item => item.attendance === true).length === 0) ? `${crawl.invitees.filter(item => item.attendance === true).length} People Attending` : `${crawl.invitees.filter(item => item.attendance === true).length} Person Attending`}
                 </Typography>
-                </Box>
+              </Box>
             </Box>
             <Box style={{display: 'flex', flexDirection: 'row'}}>
-                <Box style={{display: 'flex', flexDirection: 'column', flex: 1}} />
-                <Box style={{display: 'flex', flexDirection: 'column', flex: 9}}>
-                <Typography variant="caption" color={crawl.invitees.filter(item => item.attendance === true && item.UserID === activeUser.UserID) ? 'primary' : 'error'}>
-                    {crawl.invitees.filter(item => item.attendance === true && item.UserID === activeUser.UserID) ? '(You are attending)' : '(You are not attending)' }
+              <Box style={{display: 'flex', flexDirection: 'column', flex: 1}} />
+              <Box style={{display: 'flex', flexDirection: 'column', flex: 9}}>
+                <Typography variant="caption" color={crawl.invitees.some(item => item.attendance === true && item.UserID === activeUser.UserId) ? 'primary' : 'error'}>
+                  {crawl.invitees.some(item => item.attendance === true && item.UserID === activeUser.UserId) ? '(You are attending)' : '(You are not attending)' }
                 </Typography>
-                </Box>
+              </Box>
             </Box>
-            
             <Divider sx={{margin: '10px 0px'}} />
-            </Box>
+          </Box>
         ) : (
             <>
             <Font
@@ -279,8 +293,12 @@ function BarCrawlOrganizerMobile({crawl, mode, handleDelete, handleDragEnd, hand
                                 <Box style={{ display: 'flex', flexDirection: 'row', gap: '10px' }}>
                                 {mode === 'edit' && (
                                     <Box style={{display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center'}}>
-                                    <IconButton 
-                                        sx={{visibility: isAdmin ? 'hidden' : 'visible'}} color="primary" onClick={() => {handleLike(bar.place_id)}}>
+                                   <IconButton 
+                                        sx={{ visibility: isAdmin ? 'hidden' : 'visible' }} 
+                                        color="primary" 
+                                        onClick={() => handleImpression(bar.place_id, "liked", bar.impressions)} 
+                                        disabled={bar.impressions.some(item => item.UserID === activeUser.UserId && item.impression === "liked")}
+                                    >
                                         <ThumbUpIcon />
                                     </IconButton>
                                     <Typography variant="caption">
@@ -309,8 +327,12 @@ function BarCrawlOrganizerMobile({crawl, mode, handleDelete, handleDragEnd, hand
                                     </IconButton>
                                     )}
                                     {mode === 'edit' && !isAdmin && (
-                                        <IconButton color="error" onClick={() => {handleDislike(bar.place_id)}}>
-                                        <ThumbDownIcon />
+                                        <IconButton 
+                                            color="error" 
+                                            onClick={() => handleImpression(bar.place_id, "disliked", bar.impressions)} 
+                                            disabled={bar.impressions.some(item => item.UserID === activeUser.UserId && item.impression === "disliked")}
+                                        >
+                                            <ThumbDownIcon />
                                         </IconButton>
                                     )}
                                     {mode === 'edit' && (
@@ -337,48 +359,50 @@ function BarCrawlOrganizerMobile({crawl, mode, handleDelete, handleDragEnd, hand
             </DragDropContext>
             )}
             {mode === 'edit' && !isAdmin ? (
-            <Box style={{display: 'flex', flexDirection: 'row', marginTop: "auto", justifyContent: 'space-between'}}>
+            <Box style={{display: 'flex', flexDirection: 'row', marginTop: "10px", justifyContent: 'space-between', position: 'absolute', bottom: '10px', left: '10px', right: '10px'}}>
                 <Button
-                variant="contained"
-                onClick={() => {handleNotAttend()}}
-                sx={{
-                    borderRadius: "50px",
-                    backgroundColor: "white",
-                    color: theme.primary,
-                    padding: "5px 0px",
-                    width: "calc(50% - 10px)",
-                    margin: '20px 0px',
-                    textTransform: "none",
-                    "&:hover": {
-                    backgroundColor: "#444849",
-                    },
-                }}
-                onMouseOver={(e) => (e.target.style.backgroundColor = "#f5f5f5")}
-                onMouseOut={(e) => (e.target.style.backgroundColor = "white")}
+                    variant="contained"
+                    onClick={() => {handleToggleAttendance(false)}}
+                    disabled={crawl.invitees.some(item => item.attendance === false && item.UserID === activeUser.UserId)}
+                    sx={{
+                        borderRadius: "50px",
+                        backgroundColor: "white",
+                        color: theme.primary,
+                        padding: "5px 0px",
+                        width: "calc(100% - 20px)",
+                        margin: '0px 10px 0px 0px',
+                        textTransform: "none",
+                        "&:hover": {
+                            backgroundColor: "#444849",
+                        },
+                    }}
+                    onMouseOver={(e) => (e.target.style.backgroundColor = "#f5f5f5")}
+                    onMouseOut={(e) => (e.target.style.backgroundColor = "white")}
                 >
-                {!isLoading ? ('Not Attending') : (<CircularProgress size="25px" sx={{ color: theme.white }} />)}
+                    {isLoading.Name === 'Not Attending' && isLoading.Load ? (<CircularProgress size="25px" sx={{ color: theme.black }} />) : ('Not Attending')}
                 </Button>
                 <Button
-                variant="contained"
-                onClick={() => {handleAttend()}}
-                sx={{
+                    variant="contained"
+                    onClick={() => {handleToggleAttendance(true)}}
+                    disabled={crawl.invitees.some(item => item.attendance === true && item.UserID === activeUser.UserId)}
+                    sx={{
                     borderRadius: "50px",
                     backgroundColor: theme.primary,
                     color: "white",
                     padding: "5px 0px",
-                    width: "calc(50% - 10px)",
-                    margin: '20px 0px',
+                    width: "calc(100% - 20px)",
+                    margin: '0px',
                     textTransform: "none",
                     "&:hover": {
-                    backgroundColor: "#444849",
+                        backgroundColor: "#444849",
                     },
-                }}
-                onMouseOver={(e) =>
+                    }}
+                    onMouseOver={(e) =>
                     (e.target.style.backgroundColor = darkenColor(theme.primary, 0.1))
-                }
-                onMouseOut={(e) => (e.target.style.backgroundColor = theme.primary)}
+                    }
+                    onMouseOut={(e) => (e.target.style.backgroundColor = theme.primary)}
                 >
-                {!isLoading ? ('Attending') : (<CircularProgress size="25px" sx={{ color: theme.white }} />)}
+                    {isLoading.Name === 'Attending' && isLoading.Load ? (<CircularProgress size="25px" sx={{ color: theme.white }} />) : ('Attending')}
                 </Button>
             </Box>
             ) : (
@@ -403,7 +427,7 @@ function BarCrawlOrganizerMobile({crawl, mode, handleDelete, handleDragEnd, hand
                 }
                 onMouseOut={(e) => (e.target.style.backgroundColor = theme.primary)}
             >
-                {!isLoading ? ('Save Crawl') : (<CircularProgress size="25px" sx={{ color: theme.white }} />)}
+                {isLoading.Name === 'Save Crawl' && isLoading.Load ? (<CircularProgress size="25px" sx={{ color: theme.white }} />) : ('Save Crawl')}
             </Button>
             )}
         </Box>
