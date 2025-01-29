@@ -14,7 +14,8 @@ function CrawlCrudButtons({ crawl, setSelectedBarCrawl, setExpanded }) {
   const navigate = useNavigate();
 
   const handleDeleteCrawl = (crawl) => {
-    dispatch(setIsLoading(true));
+    dispatch(setIsLoading("Load", true));
+    dispatch(setIsLoading("Name", 'Delete'));;
     dispatch(
       setModal(
         true,
@@ -53,7 +54,8 @@ function CrawlCrudButtons({ crawl, setSelectedBarCrawl, setExpanded }) {
                   dispatch(setChangeInData(changeInData + 1));
                   dispatch(setModal(false, null));
                   dispatch(setAlert({ open: true, severity: 'success', message: 'Bar crawl deleted successfully!' }));
-                  dispatch(setIsLoading(false));
+                  dispatch(setIsLoading("Load", false));
+                  dispatch(setIsLoading("Name", ''));;
                   navigate('/');
                 });
               }}
@@ -64,7 +66,8 @@ function CrawlCrudButtons({ crawl, setSelectedBarCrawl, setExpanded }) {
               variant="contained"
               color="primary"
               onClick={() => {
-                dispatch(setIsLoading(false))
+                dispatch(setIsLoading("Load", false));
+                dispatch(setIsLoading("Name", ''));
                 dispatch(setModal(false, null))
               }}
             >
@@ -94,7 +97,7 @@ function CrawlCrudButtons({ crawl, setSelectedBarCrawl, setExpanded }) {
       </Box>
       <Box style={{ display: "flex", flexDirection: "column" }}>
         <Button variant="contained" color="error" onClick={() => handleDeleteCrawl(crawl)}>
-          {!isLoading ? ('Delete') : (<CircularProgress size="25px" sx={{ color: theme.white }} />)}
+          {isLoading.Name === 'Delete' && isLoading.Load ? (<CircularProgress size="25px" sx={{ color: theme.white }} />) : ('Delete')}
         </Button>
       </Box>
     </Box>

@@ -73,7 +73,8 @@ function AuthPage({ mode }) {
     dispatch(setActiveUser({ key: 'UserAvatarType', value: avatarType }));
     dispatch(setActiveUser({ key: 'Friends', value: friendsArray }));
     dispatch(setActiveUser({ key: 'userLocation', userLocation }));
-    dispatch(setIsLoading(false));
+    dispatch(setIsLoading("Load", false));
+    dispatch(setIsLoading("Name", ''));;
 
     Cookies.set('user', JSON.stringify({
       userId: userId,
@@ -88,7 +89,8 @@ function AuthPage({ mode }) {
   const handleAuth = async (e) => {
     e.preventDefault();
     if (!validateFields()) return;
-    dispatch(setIsLoading(true))
+    dispatch(setIsLoading("Load", true));
+    dispatch(setIsLoading("Name", 'Auth'));
     if (!forgotPw) {
       try {
         const { email, password, confirmPassword, fName, lName } = formState;
@@ -102,12 +104,14 @@ function AuthPage({ mode }) {
             updateUserState(`${userData.UserFirstName} ${userData.UserLastName}`, user.uid, userData.email, userData.UserAvatarType, friendsArray, userData.userLocation);
           } else {
             console.log('No such user data found in Firestore!');
-            dispatch(setIsLoading(false))
+            dispatch(setIsLoading("Load", false));
+            dispatch(setIsLoading("Name", ''));
           }
         } else if (mode === 'signup') {
           if (password !== confirmPassword) {
             dispatch(setAlert({ open: true, severity: 'error', message: 'Passwords do not match.' }));
-            dispatch(setIsLoading(false));
+            dispatch(setIsLoading("Load", false));
+            dispatch(setIsLoading("Name", ''));;
             return;
           }
 
@@ -116,7 +120,8 @@ function AuthPage({ mode }) {
             const friendsArray = await getFriendsForUser(user.uid)
             updateUserState(`${fName} ${lName}`, user.uid, email, 'text', friendsArray, location);
           } catch (error) {
-            dispatch(setIsLoading(false));
+            dispatch(setIsLoading("Load", false));
+            dispatch(setIsLoading("Name", ''));;
           }
         }
 
@@ -126,15 +131,18 @@ function AuthPage({ mode }) {
         }, 375);
       } catch (error) {
         dispatch(setAlert({ open: true, severity: 'error', message: 'Incorrect email or password' }))
-        dispatch(setIsLoading(false))
+        dispatch(setIsLoading("Load", false));
+        dispatch(setIsLoading("Name", ''));
       }
     } else {
       try {
         await sendPasswordReset(formState.email);
         dispatch(setAlert({ open: true, severity: 'success', message: 'Passwords reset email sent successfully. Please check your email for further instructions.' }))
-        dispatch(setIsLoading(false))
+        dispatch(setIsLoading("Load", false));
+        dispatch(setIsLoading("Name", ''));
       } catch (error) {
-        dispatch(setIsLoading(false))
+        dispatch(setIsLoading("Load", false));
+        dispatch(setIsLoading("Name", ''));
       }
     }
   };
@@ -279,7 +287,7 @@ function AuthPage({ mode }) {
           }
           onMouseOut={(e) => (e.target.style.backgroundColor = theme.primary)}
         >
-          {!isLoading ? (mode === 'login' ? (!forgotPw ? 'Login' : 'Forgot Password') : 'Sign Up') : (<CircularProgress size="25px" sx={{ color: theme.white }} />)}
+          {isLoading.Name === 'Auth' && isLoading.Load ? (<CircularProgress size="25px" sx={{ color: theme.white }} />) : (mode === 'login' ? (!forgotPw ? 'Login' : 'Forgot Password') : 'Sign Up')}
         </Button>
         <Box onClick={() => { mode === 'login' ? navigate('/Signup') : navigate('/Login') }} style={{ color: theme.primary, marginTop: '15px', cursor: 'pointer' }}>
           <Font

@@ -10,9 +10,9 @@ export const setIsLarge = (state) => ({
   type: 'SET_IS_LARGE',
   payload: state,
 });
-export const setIsLoading = (state) => ({
+export const setIsLoading = (key, value) => ({
   type: 'SET_IS_LOADING',
-  payload: state,
+  payload: { key, value },
 });
 export const setIsAdmin = (state) => ({
   type: 'SET_IS_ADMIN',

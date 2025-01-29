@@ -25,14 +25,9 @@ function BarCrawlOrganizerRoot({ crawl, mode, slug, setCrawl }) {
   
   const [barCrawlName, setBarCrawlName] = useState(mode === 'edit' ? crawl.barcrawlName : "");
   const [drawerOpen, setDrawerOpen] = useState(false);  
-  const [startDate, setStartDate] = useState(crawl.startDate ? new Date(crawl.startDate.seconds * 1000) : null);  
-  const [endDate, setEndDate] = useState(crawl.endDate ? new Date(crawl.endDate.seconds * 1000) : null);  
+  const [startDate, setStartDate] = useState(crawl ? (new Date(crawl.startDate.seconds * 1000)) : null);  
+  const [endDate, setEndDate] = useState(crawl ? (new Date(crawl.endDate.seconds * 1000)) : null);  
   const [intamacyLevel, setIntamacyLevel] = useState(crawl ? crawl.intamacyLevel : 'Public');  
-
-  useEffect(()=>{
-    console.log(startDate)
-    console.log(endDate)
-  }, [startDate, endDate])
 
   const navigate = useNavigate();
 
@@ -54,46 +49,58 @@ function BarCrawlOrganizerRoot({ crawl, mode, slug, setCrawl }) {
     setBarCrawlName(event.target.value);
   };
 
-  const handleLike = async (placeId) => {
-    const likeRefConstructor = { UserID: activeUser.UserId, placeId: placeId, impression: 'liked' };
+  const handleImpression = async (placeId, impressionType, existingImps) => {
+    const existingImpression = existingImps.find(item => item.UserID === activeUser.UserId);
+    let newImpression;
+    if (existingImpression) {
+      newImpression = {
+        UserID: activeUser.UserId,
+        placeId: placeId,
+        impression: existingImpression.impression === "liked" ? "disliked" : "liked"
+      };
+    } else {
+      newImpression = {
+        UserID: activeUser.UserId,
+        placeId: placeId,
+        impression: impressionType
+      };
+    }
+  
     try {
-      await addImpression(slug, placeId, likeRefConstructor);
-       getBarCrawl(slug).then((response) => {
+      await addImpression(slug, placeId, newImpression);
+      getBarCrawl(slug).then((response) => {
         setCrawl(response);
         dispatch(setSelectedBars(response.barCrawlInfo || []));
       });
     } catch (error) {
-      console.error('Error liking the bar:', error);
+      console.error(`Error updating impression:`, error);
     }
   };
   
-  const handleDislike = async (placeId) => {
-    const dislikeRefConstructor = { UserID: activeUser.UserId, placeId: placeId, impression: 'disliked' };
+  
+  const handleToggleAttendance = async (x) => {
+    dispatch(setIsLoading("Load", true));
+    dispatch(setIsLoading("Name", x ? 'Attending' : 'Not Attending'));
     try {
-      await addImpression(slug, placeId, dislikeRefConstructor);
+      const attendeeConstructor = { UserID: activeUser.UserId, attendance: x };
+      await addAttendance(slug, attendeeConstructor);  
+      dispatch(setIsLoading("Load", false));
+      dispatch(setIsLoading("Name", ''));
       getBarCrawl(slug).then((response) => {
-       setCrawl(response);
-       dispatch(setSelectedBars(response.barCrawlInfo || []));
-     });
+        setCrawl(response);
+        dispatch(setSelectedBars(response.barCrawlInfo || []));
+      });
     } catch (error) {
-      console.error('Error disliking the bar:', error);
+      console.error(`Error updating impression:`, error);
+      dispatch(setIsLoading("Load", false));
+      dispatch(setIsLoading("Name", ''));
     }
   };
   
-  const handleAttend = async () => {
-    const attendeeConstructor = { UserID: activeUser.UserId, attendance: true };
-    console.log(attendeeConstructor);
-    await addAttendance(slug, attendeeConstructor);  
-  };
-  
-  const handleNotAttend = async () => {
-    const nonAttendeeConstructor = { UserID: activeUser.UserId, attendance: false };
-    console.log(nonAttendeeConstructor);
-    await addAttendance(slug, nonAttendeeConstructor); 
-  };
 
   const handleSaveCrawl = async () => {
-    dispatch(setIsLoading(true))
+    dispatch(setIsLoading("Load", true));
+    dispatch(setIsLoading("Name", 'Save Crawl'));
     if (!activeUser.UserId) {
       dispatch(setModal(true,
         <Box
@@ -155,16 +162,18 @@ function BarCrawlOrganizerRoot({ crawl, mode, slug, setCrawl }) {
       ))
     } else {
       try {
-        const createdId = await saveBarCrawl(activeUser.UserId, selectedBars, barCrawlName, startDate, endDate, intamacyLevel);
+        const createdId = await saveBarCrawl(activeUser.UserId, selectedBars, barCrawlName, startDate, endDate, intamacyLevel, slug);
         dispatch(setSelectedBars([]));
         dispatch(setBarResults([]));
         dispatch(setAlert({ open: true, severity: 'success', message: 'Bar crawl saved successfully!' }))
-        dispatch(setIsLoading(false))
+        dispatch(setIsLoading("Load", false));
+        dispatch(setIsLoading("Name", ''));
         dispatch(setChangeInData(changeInData + 1))
         setTimeout(() => { navigate(`/Crawl/${createdId}`) }, 375);
       } catch (error) {
         dispatch(setAlert({ open: true, severity: 'error', message: 'There was a problem saving the bar crawl.' }))
-        dispatch(setIsLoading(false))
+        dispatch(setIsLoading("Load", false));
+        dispatch(setIsLoading("Name", ''));
       }
     }
   };
@@ -191,10 +200,8 @@ function BarCrawlOrganizerRoot({ crawl, mode, slug, setCrawl }) {
           handleDelete={handleDelete}
           handleDragEnd={handleDragEnd}
           handleBarCrawlNameChange={handleBarCrawlNameChange}
-          handleLike={handleLike}
-          handleDislike={handleDislike}
-          handleAttend={handleAttend}
-          handleNotAttend={handleNotAttend}
+          handleImpression={handleImpression}
+          handleToggleAttendance={handleToggleAttendance}
           handleSaveCrawl={handleSaveCrawl}
           handleIntamacyLevelChange={handleIntamacyLevelChange}
           barCrawlName={barCrawlName} 
@@ -211,10 +218,8 @@ function BarCrawlOrganizerRoot({ crawl, mode, slug, setCrawl }) {
           handleDelete={handleDelete}
           handleDragEnd={handleDragEnd}
           handleBarCrawlNameChange={handleBarCrawlNameChange}
-          handleLike={handleLike}
-          handleDislike={handleDislike}
-          handleAttend={handleAttend}
-          handleNotAttend={handleNotAttend}
+          handleImpression={handleImpression}
+          handleToggleAttendance={handleToggleAttendance}
           handleSaveCrawl={handleSaveCrawl}
           handleIntamacyLevelChange={handleIntamacyLevelChange}
           barCrawlName={barCrawlName} 

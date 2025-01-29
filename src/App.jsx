@@ -43,7 +43,8 @@ function App() {
 
   const handleCloseMod = () => {
     dispatch(setModal(false, null))
-    dispatch(setIsLoading(false))
+    dispatch(setIsLoading("Load", false));
+    dispatch(setIsLoading("Name", ''));
   };
 
   useEffect(() => {

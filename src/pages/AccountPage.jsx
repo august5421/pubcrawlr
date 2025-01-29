@@ -39,7 +39,8 @@ function AccountPage() {
   const handleUpdate = async (e) => {
     e.preventDefault();
     if (!validateFields()) return;
-    dispatch(setIsLoading(true))
+    dispatch(setIsLoading("Load", true));
+    dispatch(setIsLoading("Name", 'Update Profile'));
     try {
       await updateUser(activeUser.UserId, formState.firstName, formState.lastName, avaRoto);
       if (formState.passwordAccordionExpanded) {
@@ -55,10 +56,12 @@ function AccountPage() {
       dispatch(setActiveUser({ key: 'Name', value: `${formState.firstName} ${formState.lastName}` }));
       dispatch(setActiveUser({ key: 'UserAvatarType', value: avaRoto }));
       dispatch(setAlert({ open: true, severity: 'success', message: 'User information updated successfully!' }))
-      dispatch(setIsLoading(false))
+      dispatch(setIsLoading("Load", false));
+      dispatch(setIsLoading("Name", ''));
     } catch (error) {
       dispatch(setAlert({ open: true, severity: 'error', message: 'Failed to update profile. Please try again.' }))
-      dispatch(setIsLoading(false))
+      dispatch(setIsLoading("Load", false));
+      dispatch(setIsLoading("Name", ''));
     }
   };
 
@@ -280,7 +283,7 @@ function AccountPage() {
             onMouseOut={(e) => (e.target.style.backgroundColor = theme.primary)}
             onClick={handleUpdate}
           >
-            {!isLoading ? ('Update Profile') : (<CircularProgress size="25px" sx={{ color: theme.white }} />)}
+            {isLoading.Name === 'Update Profile' && isLoading.Load ? (<CircularProgress size="25px" sx={{ color: theme.white }} />) : ('Update Profile')}
           </Button>
         </Box>
       </Box>

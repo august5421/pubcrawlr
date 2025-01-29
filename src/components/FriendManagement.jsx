@@ -129,7 +129,8 @@ const FriendManagement = () => {
 
   const handleAddFriend = async (user) => {
     if (!activeUser.UserId) return;
-    dispatch(setIsLoading(true))
+    dispatch(setIsLoading("Load", true));
+    dispatch(setIsLoading("Name", 'Add'));
     try {
       const friendsRef = doc(db, 'Friends', activeUser.UserId);
       const docSnap = await getDoc(friendsRef);
@@ -181,11 +182,13 @@ const FriendManagement = () => {
 
       dispatch(setChangeInData(changeInData + 1));
       dispatch(setAlert({ open: true, severity: 'success', message: 'Friend request sent successfully!' }));
-      dispatch(setIsLoading(false))
+      dispatch(setIsLoading("Load", false));
+      dispatch(setIsLoading("Name", ''));
     } catch (error) {
       console.error('Error adding friend:', error);
       dispatch(setAlert({ open: true, severity: 'error', message: 'Failed to send friend request.' }));
-      dispatch(setIsLoading(false))
+      dispatch(setIsLoading("Load", false));
+      dispatch(setIsLoading("Name", ''));
     }
   };
 
@@ -264,7 +267,8 @@ const FriendManagement = () => {
   }  
 
   const handleRemoveFriendRequest = async (friend, action) => {
-    dispatch(setIsLoading(true))
+    dispatch(setIsLoading("Load", true));
+    dispatch(setIsLoading("Name", action));
     try {
       const userFriendsRef = doc(db, 'Friends', activeUser.UserId);
       const userDoc = await getDoc(userFriendsRef);
@@ -292,7 +296,8 @@ const FriendManagement = () => {
           message: `Friend request ${action.toLowerCase()}ed successfully!`,
         })
       );
-      dispatch(setIsLoading(false))
+      dispatch(setIsLoading("Load", false));
+      dispatch(setIsLoading("Name", ''));
     } catch (error) {
       console.error(`Error handling ${action.toLowerCase()} action:`, error);
       dispatch(
@@ -302,12 +307,14 @@ const FriendManagement = () => {
           message: `Failed to ${action.toLowerCase()} friend request.`,
         })
       );
-      dispatch(setIsLoading(false))
+      dispatch(setIsLoading("Load", false));
+      dispatch(setIsLoading("Name", ''));
     }
   };
 
   const handleAcceptFriendRequest = async (friend) => {
-    dispatch(setIsLoading(true))
+    dispatch(setIsLoading("Load", true));
+    dispatch(setIsLoading("Name", 'Accept'));
     try {
       const userFriendsRef = doc(db, 'Friends', activeUser.UserId);
       const userDoc = await getDoc(userFriendsRef);
@@ -339,7 +346,8 @@ const FriendManagement = () => {
           message: 'Friend request accepted successfully!',
         })
       );
-      dispatch(setIsLoading(false))
+      dispatch(setIsLoading("Load", false));
+      dispatch(setIsLoading("Name", ''));
     } catch (error) {
       console.error('Error accepting friend request:', error);
       dispatch(
@@ -349,7 +357,8 @@ const FriendManagement = () => {
           message: 'Failed to accept friend request.',
         })
       );
-      dispatch(setIsLoading(false))
+      dispatch(setIsLoading("Load", false));
+      dispatch(setIsLoading("Name", ''));
     }
   };
 
@@ -413,7 +422,7 @@ const FriendManagement = () => {
                   }}
                   
                 >
-                  {getFriendStatus(user.id) ? 'Pending' : (!isLoading ? 'Add' : <CircularProgress size="25px" sx={{ color: theme.white }} />)}
+                  {getFriendStatus(user.id) ? 'Pending' : (isLoading.Name === 'Add' && isLoading.Load ? (<CircularProgress size="25px" sx={{ color: theme.white }} />) : ('Request'))}
                 </Button>
               )}
             </ListItem>
@@ -509,7 +518,7 @@ const FriendManagement = () => {
                     }}
                     
                   >
-                    {!isLoading ? 'Rescind' : <CircularProgress size="25px" sx={{ color: theme.white }} />}
+                    {isLoading.Name === 'Rescind' && isLoading.Load ? <CircularProgress size="25px" sx={{ color: theme.white }} /> : 'Rescind'}
                   </Button>
                 </Box>
                 
@@ -533,7 +542,7 @@ const FriendManagement = () => {
                     }}
                     
                   >
-                    {!isLoading ? 'Decline' : <CircularProgress size="25px" sx={{ color: theme.primary }} />}
+                    {isLoading.Name === 'Decline' && isLoading.Load ? <CircularProgress size="25px" sx={{ color: theme.primary }} /> : 'Decline'}
                   </Button>
                   <Button
                     variant="contained"
@@ -552,7 +561,7 @@ const FriendManagement = () => {
                     }}
                     
                   >
-                    {!isLoading ? 'Accept' : <CircularProgress size="25px" sx={{ color: theme.white }} />}
+                    {isLoading.Name === 'Accept' && isLoading.Load ? <CircularProgress size="25px" sx={{ color: theme.white }} /> : 'Accept'}
                   </Button>
                 </Box>
                 
@@ -616,7 +625,7 @@ const FriendManagement = () => {
                     }}
                     
                   >
-                    {!isLoading ? 'Unfriend' : <CircularProgress size="25px" sx={{ color: theme.white }} />}
+                    {isLoading.Name === 'Rescind' && isLoading.Load ? <CircularProgress size="25px" sx={{ color: theme.white }} /> : 'Rescind' }
                   </Button>
                 </Box>
                 

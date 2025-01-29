@@ -26,8 +26,9 @@ import Font from "./Font";
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { useEffect } from "react";
 
-function BarCrawlOrganizerDesktop({crawl, mode, handleDelete, handleDragEnd, handleBarCrawlNameChange, handleLike, handleDislike, handleAttend, handleNotAttend, handleSaveCrawl, handleIntamacyLevelChange, barCrawlName, startDate, endDate, intamacyLevel, handleStartDateChange, handleEndDateChange}) {
+function BarCrawlOrganizerDesktop({crawl, mode, handleDelete, handleDragEnd, handleBarCrawlNameChange, handleImpression, handleToggleAttendance, handleSaveCrawl, handleIntamacyLevelChange, barCrawlName, startDate, endDate, intamacyLevel, handleStartDateChange, handleEndDateChange}) {
   const dispatch = useDispatch();
   const theme = useSelector((state) => state.theme);
   const isLarge = useSelector((state) => state.isLarge);
@@ -35,7 +36,7 @@ function BarCrawlOrganizerDesktop({crawl, mode, handleDelete, handleDragEnd, han
   const selectedBars = useSelector((state) => state.selectedBars);
   const activeUser = useSelector((state) => state.activeUser);
   const isAdmin = useSelector((state) => state.isAdmin);
-
+  
   return (
     <Box
       style={{
@@ -106,8 +107,8 @@ function BarCrawlOrganizerDesktop({crawl, mode, handleDelete, handleDragEnd, han
           <Box style={{display: 'flex', flexDirection: 'row'}}>
             <Box style={{display: 'flex', flexDirection: 'column', flex: 1}} />
             <Box style={{display: 'flex', flexDirection: 'column', flex: 9}}>
-              <Typography variant="caption" color={crawl.invitees.filter(item => item.attendance === true && item.UserID === activeUser.UserID) ? 'primary' : 'error'}>
-                {crawl.invitees.filter(item => item.attendance === true && item.UserID === activeUser.UserID) ? '(You are attending)' : '(You are not attending)' }
+              <Typography variant="caption" color={crawl.invitees.some(item => item.attendance === true && item.UserID === activeUser.UserId) ? 'primary' : 'error'}>
+                {crawl.invitees.some(item => item.attendance === true && item.UserID === activeUser.UserId) ? '(You are attending)' : '(You are not attending)' }
               </Typography>
             </Box>
           </Box>
@@ -274,7 +275,7 @@ function BarCrawlOrganizerDesktop({crawl, mode, handleDelete, handleDragEnd, han
                                 <IconButton 
                                   sx={{ visibility: isAdmin ? 'hidden' : 'visible' }} 
                                   color="primary" 
-                                  onClick={() => handleLike(bar.place_id)} 
+                                  onClick={() => handleImpression(bar.place_id, "liked", bar.impressions)} 
                                   disabled={bar.impressions.some(item => item.UserID === activeUser.UserId && item.impression === "liked")}
                                 >
                                   <ThumbUpIcon />
@@ -307,7 +308,7 @@ function BarCrawlOrganizerDesktop({crawl, mode, handleDelete, handleDragEnd, han
                               {mode === 'edit' && !isAdmin && (
                                   <IconButton 
                                     color="error" 
-                                    onClick={() => handleDislike(bar.place_id)} 
+                                    onClick={() => handleImpression(bar.place_id, "disliked", bar.impressions)} 
                                     disabled={bar.impressions.some(item => item.UserID === activeUser.UserId && item.impression === "disliked")}
                                   >
                                     <ThumbDownIcon />
@@ -340,7 +341,8 @@ function BarCrawlOrganizerDesktop({crawl, mode, handleDelete, handleDragEnd, han
         <Box style={{display: 'flex', flexDirection: 'row', marginTop: "auto",}}>
           <Button
             variant="contained"
-            onClick={() => {handleNotAttend()}}
+            onClick={() => {handleToggleAttendance(false)}}
+            disabled={crawl.invitees.some(item => item.attendance === false && item.UserID === activeUser.UserId)}
             sx={{
               borderRadius: "50px",
               backgroundColor: "white",
@@ -356,11 +358,12 @@ function BarCrawlOrganizerDesktop({crawl, mode, handleDelete, handleDragEnd, han
             onMouseOver={(e) => (e.target.style.backgroundColor = "#f5f5f5")}
             onMouseOut={(e) => (e.target.style.backgroundColor = "white")}
           >
-            {!isLoading ? ('Not Attending') : (<CircularProgress size="25px" sx={{ color: theme.white }} />)}
+            {isLoading.Name === 'Not Attending' && isLoading.Load ? (<CircularProgress size="25px" sx={{ color: theme.black }} />) : ('Not Attending')}
           </Button>
           <Button
             variant="contained"
-            onClick={() => {handleAttend()}}
+            onClick={() => {handleToggleAttendance(true)}}
+            disabled={crawl.invitees.some(item => item.attendance === true && item.UserID === activeUser.UserId)}
             sx={{
               borderRadius: "50px",
               backgroundColor: theme.primary,
@@ -378,7 +381,7 @@ function BarCrawlOrganizerDesktop({crawl, mode, handleDelete, handleDragEnd, han
             }
             onMouseOut={(e) => (e.target.style.backgroundColor = theme.primary)}
           >
-            {!isLoading ? ('Attending') : (<CircularProgress size="25px" sx={{ color: theme.white }} />)}
+            {isLoading.Name === 'Attending' && isLoading.Load ? (<CircularProgress size="25px" sx={{ color: theme.white }} />) : ('Attending')}
           </Button>
         </Box>
       ) : (
@@ -403,7 +406,7 @@ function BarCrawlOrganizerDesktop({crawl, mode, handleDelete, handleDragEnd, han
           }
           onMouseOut={(e) => (e.target.style.backgroundColor = theme.primary)}
         >
-          {!isLoading ? ('Save Crawl') : (<CircularProgress size="25px" sx={{ color: theme.white }} />)}
+          {isLoading.Name === 'Save Crawl' && isLoading.Load ? (<CircularProgress size="25px" sx={{ color: theme.white }} />) : ('Save Crawl')}
         </Button>
       )}
     </Box>
