@@ -6,9 +6,10 @@ import { useNavigate } from 'react-router-dom';
 import { deleteBarCrawl } from '../services/BarCrawlService';
 import { useEffect } from 'react';
 
-function CrawlCrudButtons({ crawl, setSelectedBarCrawl, setExpanded }) {
+function CrawlCrudButtons({ crawl }) {
   const dispatch = useDispatch();
   const theme = useSelector((state) => state.theme);
+  const activeUser = useSelector((state) => state.activeUser);
   const isLarge = useSelector((state) => state.isLarge);
   const isLoading = useSelector((state) => state.isLoading);
   const changeInData = useSelector((state) => state.changeInData);
@@ -49,15 +50,12 @@ function CrawlCrudButtons({ crawl, setSelectedBarCrawl, setExpanded }) {
               variant="contained"
               color="error"
               onClick={async () => {
-                deleteBarCrawl(crawl.id).then(() => {
-                  setExpanded(null);
-                  setSelectedBarCrawl([])
+                  deleteBarCrawl(crawl.id).then(() => {
                   dispatch(setChangeInData(changeInData + 1));
                   dispatch(setModal(false, null));
                   dispatch(setAlert({ open: true, severity: 'success', message: 'Bar crawl deleted successfully!' }));
                   dispatch(setIsLoading("Load", false));
                   dispatch(setIsLoading("Name", ''));;
-                  navigate('/');
                 });
               }}
             >
@@ -80,27 +78,36 @@ function CrawlCrudButtons({ crawl, setSelectedBarCrawl, setExpanded }) {
     );
   };
 
+  const admin = crawl?.admins.includes(activeUser.UserId);
+
   return (
     <Box style={{ display: "flex", flexDirection: "row", justifyContent: isLarge ? "space-around" : null}}>
-      <Box style={{ display: "flex", flexDirection: "column" }}>
-        <Button variant="contained" color="primary">
-          Start
-        </Button>
-      </Box>
+      {admin && (
+        <Box style={{ display: "flex", flexDirection: "column" }}>
+          <Button variant="contained" color="primary">
+            Start
+          </Button>
+        </Box>
+      )}
       <Box style={{ display: "flex", flexDirection: "column", margin: !isLarge ? "0px 20px" : null }}>
         <Button
           variant="contained"
           color="secondary"
-          onClick={() => navigate(`/Crawl/${crawl.id}`)} 
+          onClick={() => {
+            dispatch(setModal(false, null))
+            navigate(`/Crawl/${crawl.id}`)
+          }} 
         >
-          Edit
+          {admin ? 'Edit' : 'view'}
         </Button>
       </Box>
-      <Box style={{ display: "flex", flexDirection: "column" }}>
-        <Button variant="contained" color="error" onClick={() => handleDeleteCrawl(crawl)}>
-          {isLoading.Name === 'Delete' && isLoading.Load ? (<CircularProgress size="25px" sx={{ color: theme.white }} />) : ('Delete')}
-        </Button>
-      </Box>
+      {admin && (
+        <Box style={{ display: "flex", flexDirection: "column" }}>
+          <Button variant="contained" color="error" onClick={() => handleDeleteCrawl(crawl)}>
+            {isLoading.Name === 'Delete' && isLoading.Load ? (<CircularProgress size="25px" sx={{ color: theme.white }} />) : ('Delete')}
+          </Button>
+        </Box>
+      )}
     </Box>
   );
 }

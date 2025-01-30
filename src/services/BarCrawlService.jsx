@@ -70,14 +70,23 @@ export async function getAllBarCrawlsForUser(userId) {
     const adminQuery = db.collection('BarCrawls').where('admins', 'array-contains', userId);
     const adminSnapshot = await adminQuery.get();
     const adminCrawls = adminSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    const inviteeQuery = db.collection('BarCrawls').where('invitees', 'array-contains', userId);
+
+    const inviteeQuery = db.collection('BarCrawls');
     const inviteeSnapshot = await inviteeQuery.get();
-    const inviteeCrawls = inviteeSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const inviteeCrawls = inviteeSnapshot.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .filter(crawl => 
+        crawl.invitees.some(invitee => 
+          invitee.UserID === userId && invitee.attendance === true
+        )
+      );
+      
     return [...adminCrawls, ...inviteeCrawls.filter(crawl => !adminCrawls.some(admin => admin.id === crawl.id))];
   } catch (e) {
     console.error('Error fetching user bar crawls:', e);
   }
-};
+}
+
 
 export async function deleteBarCrawl(crawlId) {
   try {
