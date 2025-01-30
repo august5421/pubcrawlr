@@ -53,7 +53,7 @@ function Navbar() {
       }}
     >
       <NavLink style={{ cursor: "pointer" }} to="/">
-        <Font text="Pubcrawlr" color={theme.primary} variant="h4" weight="bold" fontFamily="PrimaryOrig"/>
+        <Font text="Pubcrawlr" color={theme.primary} variant="h4" weight="bold" fontFamily="PrimaryOrig" />
       </NavLink>
       <Fade in={showAuth}>
         <Box style={{ display: "flex", gap: "10px", alignItems: "center" }}>
@@ -95,9 +95,9 @@ function Navbar() {
             </>
           ) : (
             <>
-              <Box sx={{position: 'relative'}}>
+              <Box sx={{ position: 'relative' }}>
                 {activeUser.UserAvatarType !== 'text' ? (
-                  <Avatar2 style={{cursor: "pointer"}} onClick={toggleDrawer(true)} size={40} name={activeUser.UserId} variant={activeUser.UserAvatarType} />
+                  <Avatar2 style={{ cursor: "pointer" }} onClick={toggleDrawer(true)} size={40} name={activeUser.UserId} variant={activeUser.UserAvatarType} />
                 ) : (
                   <Avatar
                     onClick={toggleDrawer(true)}
@@ -108,7 +108,7 @@ function Navbar() {
                     }}
                   >
                     {stringAvatar(activeUser.Name)}
-                    
+
                   </Avatar>
                 )}
                 <Badge
@@ -122,7 +122,7 @@ function Navbar() {
                   }}
                 />
               </Box>
-              <Drawer sx={{width: isMobile ? '80%' : '400px'}} anchor="right" open={drawerOpen} onClose={toggleDrawer(false)}>
+              <Drawer sx={{ width: isMobile ? '80%' : '400px' }} anchor="right" open={drawerOpen} onClose={toggleDrawer(false)}>
                 <Box
                   style={{
                     width: 250,
@@ -158,24 +158,24 @@ function Navbar() {
                       </Typography>
                     </NavLink>
                   </Box>
-                  
+
                   <Box>
                     <Divider />
                     <Button
-                        variant="contained"
-                        style={{
-                            borderRadius: "50px",
-                            width: '100%',
-                            backgroundColor: theme.primary,
-                            color: "white",
-                            padding: "10px 20px",
-                            textTransform: "none",
-                            alignSelf: "flex-end",
-                            marginTop: '20px',
-                        }}
-                        onClick={handleLogout}
+                      variant="contained"
+                      style={{
+                        borderRadius: "50px",
+                        width: '100%',
+                        backgroundColor: theme.primary,
+                        color: "white",
+                        padding: "10px 20px",
+                        textTransform: "none",
+                        alignSelf: "flex-end",
+                        marginTop: '20px',
+                      }}
+                      onClick={handleLogout}
                     >
-                        Logout
+                      Logout
                     </Button>
                   </Box>
                 </Box>
