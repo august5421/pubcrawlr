@@ -22,7 +22,7 @@ function Navbar() {
 
   const handleLogout = () => {
     Cookies.remove("user");
-
+    dispatch(setShowAuth(true));
     dispatch(setActiveUser({ key: "Name", value: "" }));
     dispatch(setActiveUser({ key: "UserId", value: "" }));
     dispatch(setActiveUser({ key: "Email", value: "" }));
@@ -30,7 +30,6 @@ function Navbar() {
     dispatch(setSelectedBars([]))
     dispatch(setBarResults([]))
     dispatch(setBarResultsInBounds([]))
-    dispatch(setShowAuth(false));
     setDrawerOpen(false);
     navigate('/');
   };
@@ -60,36 +59,39 @@ function Navbar() {
         <Box style={{ display: "flex", gap: "10px", alignItems: "center" }}>
           {activeUser.UserId === "" ? (
             <>
-              <Button
-                variant="outlined"
-                style={{
-                  borderRadius: "50px",
-                  backgroundColor: "white",
-                  color: theme.primary,
-                  border: `1px solid transparent`,
-                  padding: "5px 20px",
-                  textTransform: "none",
-                }}
-                onMouseOver={(e) => (e.target.style.backgroundColor = "#f5f5f5")}
-                onMouseOut={(e) => (e.target.style.backgroundColor = "white")}
-              >
-                <NavLink to="/Login">Login</NavLink>
-              </Button>
-
-              <Button
-                variant="contained"
-                style={{
-                  borderRadius: "50px",
-                  backgroundColor: theme.primary,
-                  color: "white",
-                  padding: "5px 20px",
-                  textTransform: "none",
-                }}
-                onMouseOver={(e) => (e.target.style.backgroundColor = darkenColor(theme.primary, 0.1))}
-                onMouseOut={(e) => (e.target.style.backgroundColor = theme.primary)}
-              >
-                <NavLink to="/Signup">Sign Up</NavLink>
-              </Button>
+              <NavLink to="/Login">
+                <Button
+                  variant="outlined"
+                  style={{
+                    borderRadius: "50px",
+                    backgroundColor: "white",
+                    color: theme.primary,
+                    border: `1px solid transparent`,
+                    padding: "5px 20px",
+                    textTransform: "none",
+                  }}
+                  onMouseOver={(e) => (e.target.style.backgroundColor = "#f5f5f5")}
+                  onMouseOut={(e) => (e.target.style.backgroundColor = "white")}
+                >
+                  Login
+                </Button>
+              </NavLink>
+              <NavLink to="/Signup">
+                <Button
+                  variant="contained"
+                  style={{
+                    borderRadius: "50px",
+                    backgroundColor: theme.primary,
+                    color: "white",
+                    padding: "5px 20px",
+                    textTransform: "none",
+                  }}
+                  onMouseOver={(e) => (e.target.style.backgroundColor = darkenColor(theme.primary, 0.1))}
+                  onMouseOut={(e) => (e.target.style.backgroundColor = theme.primary)}
+                >
+                  Sign Up
+                </Button>
+              </NavLink>
             </>
           ) : (
             <>
@@ -136,31 +138,25 @@ function Navbar() {
                         Welcome, {activeUser.Name || "User"}
                     </Typography>
                     <Divider />
-                    <Typography variant="subtitle1"
-                      sx={{cursor: 'pointer', marginTop: '15px'}}
-                      onMouseOver={(e) => (e.target.style.backgroundColor = "#f5f5f5")}
-                      onMouseOut={(e) => (e.target.style.backgroundColor = "white")}
-                    >
-                        <NavLink to="/">Create A Crawl</NavLink>
-                    </Typography>
-                    {userBarCrawls?.length > 0 && (
+                    <NavLink to="/" onClick={toggleDrawer(false)}>
                       <Typography variant="subtitle1"
                         sx={{cursor: 'pointer', marginTop: '15px'}}
                         onMouseOver={(e) => (e.target.style.backgroundColor = "#f5f5f5")}
                         onMouseOut={(e) => (e.target.style.backgroundColor = "white")}
                       >
-                          <NavLink to="/Crawls">My Crawls</NavLink>
+                          Create A Crawl
                       </Typography>
-                    )}
-                    <Typography variant="subtitle1"
-                      sx={{cursor: 'pointer', marginTop: '15px', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}
-                      onMouseOver={(e) => (e.target.style.backgroundColor = "#f5f5f5")}
-                      onMouseOut={(e) => (e.target.style.backgroundColor = "white")}
-                    >
-                        <NavLink to="/Account">Account & Friends</NavLink>
-                        <Badge badgeContent={unseenRequests} color="error" invisible={unseenRequests === 0} />
-                    </Typography>
-                    
+                    </NavLink>
+                    <NavLink to="/Dashboard" onClick={toggleDrawer(false)}>
+                      <Typography variant="subtitle1"
+                        sx={{cursor: 'pointer', marginTop: '15px', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+                        onMouseOver={(e) => (e.target.style.backgroundColor = "#f5f5f5")}
+                        onMouseOut={(e) => (e.target.style.backgroundColor = "white")}
+                      >
+                          Dashboard
+                          <Badge badgeContent={unseenRequests} color="error" invisible={unseenRequests === 0} />
+                      </Typography>
+                    </NavLink>
                   </Box>
                   
                   <Box>

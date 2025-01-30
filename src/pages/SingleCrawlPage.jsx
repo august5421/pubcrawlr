@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Box, Alert, AlertTitle, Button } from "@mui/material";
 import { useDispatch, useSelector } from 'react-redux';
 import FinishedBarList from '../components/FinishedBarList';
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { getBarCrawl } from '../services/BarCrawlService';
 import { getMarkerHTML } from '../functions/functions';
 import maplibregl from 'maplibre-gl';
@@ -19,7 +19,7 @@ function SingleCrawlPage() {
   const isTablet = useSelector((state) => state.isTablet);
   const isLarge = useSelector((state) => state.isLarge);
   const activeUser = useSelector((state) => state.activeUser);
-  const location = useSelector((state) => state.location);
+  const isAdmin = useSelector((state) => state.isAdmin);
   const selectedBars = useSelector((state) => state.selectedBars);
 
   const [crawl, setCrawl] = useState([]);
@@ -30,15 +30,30 @@ function SingleCrawlPage() {
   const [pubcrawlAccess, setPubcrawlAccess] = useState({access: true, reason: 'assume crawl is public'});
   const [friendsOfCrawlOwner, setFriendsOfCrawlOwner] = useState([]);
   const { slug } = useParams();
+  const navigate = useNavigate();
   
   // load crawl by id
   useEffect(() => {
-    getBarCrawl(slug).then((response) => {
-      setCrawl(response);
-      setCrawlLoaded(true);
-      dispatch(setSelectedBars(response.barCrawlInfo || []));
-    });
+    const fetchCrawl = async () => {
+      try {
+        const response = await getBarCrawl(slug);
+        setCrawl(response);
+        setCrawlLoaded(true);
+        dispatch(setSelectedBars(response.barCrawlInfo || []));
+      } catch (error) {
+        console.error("Error fetching bar crawl:", error);
+  
+        if (error.code === "permission-denied") {
+          setPubcrawlAccess({ access: false, reason: "User not logged in" });
+        } else {
+          setPubcrawlAccess({ access: false, reason: "Bar crawl does not exist" });
+        }
+      }
+    };
+  
+    fetchCrawl();
   }, [slug, dispatch]);
+  
   
   // set isAdmin global state and local state for friends of the bar crawl owner
   useEffect(() => {
@@ -63,19 +78,28 @@ function SingleCrawlPage() {
     const isUserInvited = crawl?.invitees?.flat()?.some(
       friend => friend.UserID === activeUser.UserId
     );
+    
     switch(crawl.intamacyLevel) {
       case 'Private':
         if (isUserInvited) {
           setPubcrawlAccess({access: true, reason: 'User is invited'})
         } else {
-          setPubcrawlAccess({access: false, reason: 'User is not invited'})
+          if (!isAdmin) {
+            setPubcrawlAccess({access: false, reason: 'User is not invited'})  
+          } else {
+            setPubcrawlAccess({access: true, reason: 'User is an admin'})
+          }
         }
         break;
       case 'Friends':
         if (isUserFriend) {
           setPubcrawlAccess({access: true, reason: 'User is a friend'})
         } else {
-          setPubcrawlAccess({access: false, reason: 'User is not a friend'})
+          if (!isAdmin) {
+            setPubcrawlAccess({access: false, reason: 'User is not a friend'})  
+          } else {
+            setPubcrawlAccess({access: true, reason: 'User is an admin'})
+          }
         }
         break;
       case 'Public':
@@ -149,41 +173,62 @@ function SingleCrawlPage() {
     }
   }, [directions, mapLoaded]);
 
+  const handleReturnToHome = () => {
+    dispatch(setSelectedBars([]));
+    navigate('/');
+  }
+
+  const handleSecondaryButton = () => {
+    switch(pubcrawlAccess.reason) {
+      case 'User not logged in':
+       navigate('/Login');
+        break;
+      case 'User is not invited':
+      // code to request invite
+          break;
+      case 'User is not friends':
+      //  code to request friendship
+        break;
+      default:
+        navigate('/Account');
+    }
+  }
+
   return (
     <>  
       {pubcrawlAccess.access ? (
         <Box
-        style={{
-          display: "flex",
-          flexDirection: isMobile ? "column" : "row",
-          height: "calc(100vh - 50px)",
-          backgroundColor: theme.white,
-          width: "100%",
-        }}
-      >
-        {crawlLoaded && <BarCrawlOrganizerRoot crawl={crawl} mode="edit" slug={slug} setCrawl={setCrawl} />}
-        {!isMobile && !isTablet ?  (
-          <Box
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              flex: isLarge ? 3 : 5,
-            }}
-          >
-            <Box id="map" style={{ width: "100%", height: "calc(100vh - 50px)" }} />
-          </Box>
-        ) : (
-          <Box
-            style={{
-              display: "flex",
-              flexDirection: "row",
-            }}
-          >
-            <Box id="map" style={{ width: "100%", height: "calc(100vh - 50px)" }} />
-          </Box>
-        )}
-        
-      </Box>
+          style={{
+            display: "flex",
+            flexDirection: isMobile ? "column" : "row",
+            height: "calc(100vh - 50px)",
+            backgroundColor: theme.white,
+            width: "100%",
+          }}
+        >
+          {crawlLoaded && <BarCrawlOrganizerRoot crawl={crawl} mode="edit" slug={slug} setCrawl={setCrawl} />}
+          {!isMobile && !isTablet ?  (
+            <Box
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                flex: isLarge ? 3 : 5,
+              }}
+            >
+              <Box id="map" style={{ width: "100%", height: "calc(100vh - 50px)" }} />
+            </Box>
+          ) : (
+            <Box
+              style={{
+                display: "flex",
+                flexDirection: "row",
+              }}
+            >
+              <Box id="map" style={{ width: "100%", height: "calc(100vh - 50px)" }} />
+            </Box>
+          )}
+          
+        </Box>
       ) : (
         <Box
           style={{
@@ -191,9 +236,9 @@ function SingleCrawlPage() {
             flexDirection: isMobile ? "column" : "row",
             justifyContent: "center",
             alignItems: "center",
-            height: "calc(100vh - 50px)",
+            height: "calc(100vh - 82px)",
             backgroundColor: theme.white,
-            width: isMobile ? "calc(100% - 32px)" : "100%",
+            width: "calc(100vw - 32px)",
             padding: "16px",
           }}
         >
@@ -205,51 +250,71 @@ function SingleCrawlPage() {
               borderRadius: "8px",
               boxShadow: 3,
               padding: "16px",
+              overflow: 'visible',
             }}
           >
-            <AlertTitle>Who Do You Know Here?</AlertTitle>
-            We're sorry but the owner of this bar crawl only wants to allow {pubcrawlAccess.reason === 'User is not invited' ? "crawlers that they've invited and you do not appear in the guest list at this time." : "crawlers that they're friends with and you are not friends at this time."}
-            <Box style={{display: 'flex', flexDirection: 'row', margin: '30px 0px 0px 0px'}}>
+            <AlertTitle>{pubcrawlAccess.reason === 'Bar crawl does not exist' ? "This Is Not the Crawl You're Looking For" : 'Who Do You Know Here?'}</AlertTitle>
+            {
+              pubcrawlAccess.reason === "User not logged in"
+                ? "You need to be logged in to access other users bar crawls. Please login or sign up to continue, or you can build a crawl of your own to give the app a try before signing up."
+                : pubcrawlAccess.reason === "User is not invited"
+                ? "We're sorry but the owner of this bar crawl only wants to allow crawlers that they've invited and you do not appear in the guest list at this time."
+                : pubcrawlAccess.reason === "User is not friends"
+                ? "We're sorry but the owner of this bar crawl only wants to allow crawlers that they're friends with and you are not friends at this time."
+                : "We're sorry, it looks like the bar crawl you are trying to load doesn't exist or has expired. Please try a different bar crawl or create one of your own!"
+            }
+
+            <Box style={{display: 'flex', flexDirection: 'row', margin: '30px 16px 0px 0px'}}>
               <Button
-              variant="contained"
-              sx={{
-                borderRadius: "50px",
-                backgroundColor: "white",
-                color: theme.primary,
-                padding: "5px 0px",
-                width: "calc(100% - 20px)",
-                margin: '0px 10px 0px 0px',
-                textTransform: "none",
-                "&:hover": {
-                  backgroundColor: "#444849",
-                },
-              }}
-              onMouseOver={(e) => (e.target.style.backgroundColor = "#f5f5f5")}
-              onMouseOut={(e) => (e.target.style.backgroundColor = "white")}
-            >
-              Return to Homepage
-            </Button>
-            <Button
-              variant="contained"
-              sx={{
-                borderRadius: "50px",
-                backgroundColor: theme.primary,
-                color: "white",
-                padding: "5px 0px",
-                width: "calc(100% - 20px)",
-                margin: '0px 10px 0px 0px',
-                textTransform: "none",
-                "&:hover": {
-                  backgroundColor: "#444849",
-                },
-              }}
-              onMouseOver={(e) =>
-                (e.target.style.backgroundColor = darkenColor(theme.primary, 0.1))
-              }
-              onMouseOut={(e) => (e.target.style.backgroundColor = theme.primary)}
-            >
-              Request Invite
-            </Button>
+                variant="contained"
+                sx={{
+                  borderRadius: "50px",
+                  backgroundColor: "white",
+                  color: theme.primary,
+                  padding: "5px 0px",
+                  width: "calc(100% - 20px)",
+                  margin: '0px 10px 0px 0px',
+                  textTransform: "none",
+                  "&:hover": {
+                    backgroundColor: "#444849",
+                  },
+                }}
+                onMouseOver={(e) => (e.target.style.backgroundColor = "#f5f5f5")}
+                onMouseOut={(e) => (e.target.style.backgroundColor = "white")}
+                onClick={() => {handleReturnToHome()}}
+              >
+                Create A Crawl
+              </Button>
+              <Button
+                variant="contained"
+                sx={{
+                  borderRadius: "50px",
+                  backgroundColor: theme.primary,
+                  color: "white",
+                  padding: "5px 0px",
+                  width: "calc(100% - 20px)",
+                  margin: '0px 10px 0px 0px',
+                  textTransform: "none",
+                  "&:hover": {
+                    backgroundColor: "#444849",
+                  },
+                }}
+                onMouseOver={(e) =>
+                  (e.target.style.backgroundColor = darkenColor(theme.primary, 0.1))
+                }
+                onMouseOut={(e) => (e.target.style.backgroundColor = theme.primary)}
+                onClick={() => {handleSecondaryButton()}}
+              >
+                {
+                  pubcrawlAccess.reason === "User not logged in"
+                    ? "Login"
+                    : pubcrawlAccess.reason === "User is not invited"
+                    ? "Request Invite"
+                    : pubcrawlAccess.reason === "User is not friends"
+                    ? "Request Friend"
+                    : "Dashboard"
+                }
+              </Button>
             </Box>
           </Alert>
         </Box>

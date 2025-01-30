@@ -36,7 +36,7 @@ function BarCrawlOrganizerDesktop({crawl, mode, handleDelete, handleDragEnd, han
   const selectedBars = useSelector((state) => state.selectedBars);
   const activeUser = useSelector((state) => state.activeUser);
   const isAdmin = useSelector((state) => state.isAdmin);
-  
+
   return (
     <Box
       style={{
@@ -64,7 +64,7 @@ function BarCrawlOrganizerDesktop({crawl, mode, handleDelete, handleDragEnd, han
             </Box>
             <Box style={{display: 'flex', flexDirection: 'column', flex: 9}}>
             <Typography variant="subtitle1">
-              {new Date(crawl.startDate.seconds * 1000).toLocaleString(undefined, {
+              {new Date(crawl?.startDate?.seconds * 1000).toLocaleString(undefined, {
                 month: "long",
                 day: "numeric",
                 hour: "numeric",

@@ -46,12 +46,14 @@ const FriendManagement = () => {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
+  
   const fetchUsers = async () => {
     const usersRef = collection(db, 'Users');
     const q = query(usersRef, orderBy('UserFirstName'), limit(50));
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
   };
+  
   useEffect(() => {
   const loadResults = async () => {
     setLoading(true);
@@ -383,17 +385,17 @@ const FriendManagement = () => {
       ) : (
         <List>
           {results.map((user) => (
-            <ListItem key={user.id}>
+            <ListItem disableGutters key={user.id}>
               {user.UserAvatarType !== 'text' ? (
-                <Avatar2 size={75} name={user.id} variant={user.UserAvatarType} />
+                <Avatar2 size={'50px'} name={user.id} variant={user.UserAvatarType} />
               ) : (
                 <Avatar
                   sx={{
                     backgroundColor: theme.primary,
-                    fontSize: '30px',
+                    fontSize: '20px',
                     color: 'white',
-                    width: 75,
-                    height: 75,
+                    width: 50,
+                    height: 50,
                   }}
                 >
                   {stringAvatar(user.UserFirstName + ' ' + user.UserLastName)}
@@ -442,17 +444,17 @@ const FriendManagement = () => {
       {filteredRequests?.length > 0 ? (
         <List>
           {filteredRequests?.map((friend, index) => (
-            <ListItem key={friend.friendId} alignItems="center">
+            <ListItem disableGutters key={friend.friendId} alignItems="center">
               {friend.FriendAva !== 'text' ? (
-                <Avatar2 style={{marginRight: '10px'}} size={75} name={friend.friendId} variant={friend.FriendAva} />
+                <Avatar2 style={{marginRight: '10px'}} size={'50px'} name={friend.friendId} variant={friend.FriendAva} />
               ) : (
                 <Avatar
                   sx={{
                     backgroundColor: theme.primary,
-                    fontSize: '30px',
+                    fontSize: '20px',
                     color: 'white',
-                    width: 75,
-                    height: 75,
+                    width: 50,
+                    height: 50,
                     marginRight: '10px'
                   }}
                 >
@@ -491,7 +493,7 @@ const FriendManagement = () => {
                       color: "white",
                       padding: "5px 10px",
                       minWidth: '75px',
-                      marginRight: '10px',
+                      margin: '10px',
                       textTransform: "none",
                       "&:hover": {
                         backgroundColor: "#444849",
@@ -589,17 +591,17 @@ const FriendManagement = () => {
         {friendsList?.length > 0 ? (
           <List>
             {friendsList?.map((friend, index) => (
-              <ListItem key={friend.friendId}>
+              <ListItem disableGutters sx={{ p: 0 }} key={friend.friendId}>
                 {friend.UserAvatarType !== 'text' ? (
-                  <Avatar2 style={{marginRight: '10px'}} size={75} name={friend.friendId} variant={friend.FriendAva} />
+                  <Avatar2 style={{marginRight: '10px'}} size={'50px'} name={friend.friendId} variant={friend.FriendAva} />
                 ) : (
                   <Avatar
                     sx={{
                       backgroundColor: theme.primary,
-                      fontSize: '30px',
+                      fontSize: '20px',
                       color: 'white',
-                      width: 75,
-                      height: 75,
+                      width: 50,
+                      height: 50,
                       marginRight: '10px'
                     }}
                   >
@@ -645,14 +647,20 @@ const FriendManagement = () => {
   };
 
   return (
-    <div>
-      <Font
-        text="Friends"
-        color={theme.primary}
-        variant="h5"
-        weight="bold"
-        fontFamily="PrimaryOrig"
-      />
+    <Box style={{
+      backgroundColor: theme.cream,
+      padding: '15px',
+      margin: '15px 15px 15px 0px',
+      borderRadius: '15px',
+      height: '100%',
+    }}>
+        <Font
+          text="My Friends"
+          color={theme.primary}
+          variant="h5"
+          weight="bold"
+          fontFamily="PrimaryOrig"
+        />
       <Tabs value={activeTab} onChange={handleTabChange} sx={{ marginTop: '10px' }}>
         <Tab label="Search" />
         <Tab
@@ -675,7 +683,7 @@ const FriendManagement = () => {
         {activeTab === 1 && renderRequestsTab()}
         {activeTab === 2 && renderFriendsTab()}
       </Box>
-    </div>
+    </Box>
   );
 };
 

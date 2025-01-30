@@ -127,7 +127,7 @@ function AuthPage({ mode }) {
 
         dispatch(setShowAuth(true));
         setTimeout(() => {
-          navigate('/');
+          navigate('/Dashboard');
         }, 375);
       } catch (error) {
         dispatch(setAlert({ open: true, severity: 'error', message: 'Incorrect email or password' }))
