@@ -31,7 +31,9 @@ const initialState = {
     severity: 'error',
   },
   location: null,
-  locationReq: 0
+  locationReq: 0,
+  vibeDialogOpen: false,
+  selectedVibes: []
 };
 
 const rootReducer = (state = initialState, action) => {
@@ -111,6 +113,11 @@ const rootReducer = (state = initialState, action) => {
         ...state,
         selectedBars: action.payload,
       };
+    case 'SET_SELECTED_VIBES':
+      return {
+        ...state,
+        selectedVibes: action.payload,
+      };
     case 'SET_BAR_RESULTS':
       return {
         ...state,
@@ -138,6 +145,11 @@ const rootReducer = (state = initialState, action) => {
           ...state.alert,
           ...action.payload,
         },
+      };
+    case 'SET_VIBE_DIALOG':
+      return {
+        ...state,
+        vibeDialogOpen: action.payload,
       };
     default:
       return state;

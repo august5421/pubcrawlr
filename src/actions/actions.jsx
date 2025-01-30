@@ -66,3 +66,11 @@ export const setUnseenRequests = (count) => ({
   type: 'SET_UNSEEN_REQUESTS',
   payload: count,
 });
+export const setVibeDialog = (state) => ({
+  type: 'SET_VIBE_DIALOG',
+  payload: state,
+})
+export const setSelectedVibes = (state) => ({
+  type: 'SET_SELECTED_VIBES',
+  payload: state,
+});
