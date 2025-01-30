@@ -15,10 +15,7 @@ function DashboardPage() {
 
   const setPaneToActive = (paneName) => {
     if (activePane.Name === paneName) return; 
-    setActivePane({ Name: '', active: true });
-    setTimeout(() => {
-      setActivePane({ Name: paneName, active: true });
-    }, 350);
+    setActivePane({ Name: paneName, active: true });
   };
 
   useEffect(() => {
@@ -47,7 +44,7 @@ function DashboardPage() {
       }}
     >
       {['Profile', 'Friends', 'Crawls'].map((pane) => {
-        const isActive = activePane.active && activePane.Name === pane;
+        const isActive = activePane.Name === pane;
         return (
           <Box
             key={pane}
@@ -57,7 +54,7 @@ function DashboardPage() {
             }}
             style={{
               display: 'flex',
-              flex: isActive ? 6 : activePane.active ? 3 : 3,
+              flex: isActive ? 6 : 3,
               flexDirection: 'column',
               height: 'calc(100vh - 50px)',
               minWidth: '325px',
