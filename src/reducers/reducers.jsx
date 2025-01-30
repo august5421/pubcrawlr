@@ -13,7 +13,7 @@ const initialState = {
   theme: {
     black: '#00171F',
     white: '#FFF',
-    cream: '#daede9',
+    cream: '#f7f7f7',
     primary: '#00171F',
     secondary: '#277a73',
     tertiary: '#00b2a3',

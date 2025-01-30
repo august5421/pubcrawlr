@@ -10,14 +10,11 @@ import { stringAvatar } from '../functions/functions.jsx';
 import Font from '../components/Font.jsx';
 import { setActiveUser, setAlert, setIsLoading } from '../actions/actions.jsx';
 import Avatar2 from 'boring-avatars';
-import FriendManagement from '../components/FriendManagement.jsx';
 import { updateUser, updatePasswordForUser } from '../services/AuthenticationService.jsx';
 
-function AccountPage() {
+function ProfileManagement() {
   const dispatch = useDispatch();
   const theme = useSelector((state) => state.theme);
-  const isMobile = useSelector((state) => state.isMobile);
-  const isTablet = useSelector((state) => state.isTablet);
   const activeUser = useSelector((state) => state.activeUser);
   const isLoading = useSelector((state) => state.isLoading);
 
@@ -112,34 +109,19 @@ function AccountPage() {
   };
 
   return (
-    <Box
-      style={{
-        display: 'flex',
-        flexDirection: 'row',
-        height: 'calc(100vh - 50px)',
-        padding: isMobile || isTablet ? '0px' : '0px 10px',
-        backgroundColor: theme.white,
-        width: 'calc(100vw - 20px)%',
-      }}
-    >
-      <Box
-        style={{
-          display: 'flex',
-          flex: 1,
-          flexDirection: 'column',
-          backgroundColor: theme.white,
-          height: '140px',
-          width: '100%',
-          zIndex: 40,
-          padding: '15px 15px 0px 15px',
-        }}
-      >
+    <Box style={{
+        backgroundColor: theme.cream,
+        padding: '15px',
+        margin: '15px 15px 15px 0px',
+        borderRadius: '15px',
+        height: '100%'
+    }}>
         <Font
-          text='Personal Information'
-          color={theme.primary}
-          variant="h5"
-          weight="bold"
-          fontFamily="PrimaryOrig"
+            text='My Profile'
+            color={theme.primary}
+            variant="h5"
+            weight="bold"
+            fontFamily="PrimaryOrig"
         />
         <Box style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: '10px' }}>
           <Box style={{ display: 'flex', flexDirection: 'column', marginRight: '15px' }}>
@@ -191,6 +173,7 @@ function AccountPage() {
             onChange={() => handleChange('passwordAccordionExpanded', !formState.passwordAccordionExpanded)}
             sx={{
               border: 'none',
+              backgroundColor: theme.cream,
               boxShadow: 'none',
               '&::before': {
                 height: '0px',
@@ -286,23 +269,8 @@ function AccountPage() {
             {isLoading.Name === 'Update Profile' && isLoading.Load ? (<CircularProgress size="25px" sx={{ color: theme.white }} />) : ('Update Profile')}
           </Button>
         </Box>
-      </Box>
-      <Box
-        style={{
-          display: 'flex',
-          flex: 1,
-          flexDirection: 'column',
-          backgroundColor: theme.white,
-          height: '140px',
-          width: '100%',
-          zIndex: 40,
-          padding: '15px 15px 0px 15px',
-        }}
-      >
-        <FriendManagement />
-      </Box>
     </Box>
   );
 }
 
-export default AccountPage;
+export default ProfileManagement;

@@ -9,6 +9,7 @@ import { useEffect } from 'react';
 function CrawlCrudButtons({ crawl, setSelectedBarCrawl, setExpanded }) {
   const dispatch = useDispatch();
   const theme = useSelector((state) => state.theme);
+  const isLarge = useSelector((state) => state.isLarge);
   const isLoading = useSelector((state) => state.isLoading);
   const changeInData = useSelector((state) => state.changeInData);
   const navigate = useNavigate();
@@ -80,13 +81,13 @@ function CrawlCrudButtons({ crawl, setSelectedBarCrawl, setExpanded }) {
   };
 
   return (
-    <Box style={{ display: "flex", flexDirection: "row", justifyContent: "space-around" }}>
+    <Box style={{ display: "flex", flexDirection: "row", justifyContent: isLarge ? "space-around" : null}}>
       <Box style={{ display: "flex", flexDirection: "column" }}>
         <Button variant="contained" color="primary">
           Start
         </Button>
       </Box>
-      <Box style={{ display: "flex", flexDirection: "column" }}>
+      <Box style={{ display: "flex", flexDirection: "column", margin: !isLarge ? "0px 20px" : null }}>
         <Button
           variant="contained"
           color="secondary"

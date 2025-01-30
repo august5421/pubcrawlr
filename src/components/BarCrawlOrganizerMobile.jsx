@@ -86,7 +86,7 @@ function BarCrawlOrganizerMobile({crawl, mode, handleDelete, handleDragEnd, hand
               </Box>
               <Box style={{display: 'flex', flexDirection: 'column', flex: 9}}>
               <Typography variant="subtitle1">
-                {new Date(crawl.startDate.seconds * 1000).toLocaleString(undefined, {
+                {new Date(crawl?.startDate?.seconds * 1000).toLocaleString(undefined, {
                   month: "long",
                   day: "numeric",
                   hour: "numeric",

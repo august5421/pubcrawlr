@@ -25,8 +25,12 @@ function BarCrawlOrganizerRoot({ crawl, mode, slug, setCrawl }) {
   
   const [barCrawlName, setBarCrawlName] = useState(mode === 'edit' ? crawl.barcrawlName : "");
   const [drawerOpen, setDrawerOpen] = useState(false);  
-  const [startDate, setStartDate] = useState(crawl ? (new Date(crawl.startDate.seconds * 1000)) : null);  
-  const [endDate, setEndDate] = useState(crawl ? (new Date(crawl.endDate.seconds * 1000)) : null);  
+  const [startDate, setStartDate] = useState(
+    crawl?.startDate?.seconds ? new Date(crawl.startDate.seconds * 1000) : null
+  );
+  const [endDate, setEndDate] = useState(
+    crawl?.endDate?.seconds ? new Date(crawl.endDate.seconds * 1000) : null
+  );
   const [intamacyLevel, setIntamacyLevel] = useState(crawl ? crawl.intamacyLevel : 'Public');  
 
   const navigate = useNavigate();

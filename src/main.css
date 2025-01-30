@@ -95,3 +95,12 @@ a:hover {
   align-content: flex-end !important;
   align-items: flex-end !important;
 }
+
+.css-1p823my-MuiListItem-root {
+  padding-left: 16px !important; 
+  padding-right: 16px !important;
+}
+
+.css-eqpfi5-MuiAccordionSummary-content {
+  margin: 0px !important;
+}

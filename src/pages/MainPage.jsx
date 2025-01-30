@@ -435,7 +435,7 @@ function MainPage() {
           style={{
             display: "flex",
             flexDirection: "column",
-            flex: isLarge ? 1 : 3,
+            flex: isLarge ? (selectedBars.length > 0 ? 1.5 : 1) : 3,
             paddingRight: "10px",
             maxHeight: "calc(100vh - 50px)",
             height: "100%",

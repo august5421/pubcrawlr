@@ -7,7 +7,7 @@ import AuthPage from './pages/AuthPage';
 import { Alert, Fade, Snackbar, Modal, Typography } from '@mui/material';
 import { setActiveUser, setAlert, setUserBarCrawls, setModal, setIsLoading, setUnseenRequests, setLocation } from './actions/actions';
 import Cookies from 'js-cookie';
-import AccountPage from './pages/AccountPage';
+import AccountPage from './pages/DashboardPage';
 import MyCrawlsPage from './pages/MyCrawlsPage';
 import SingleCrawlPage from './pages/SingleCrawlPage';
 import { Routes, Route } from 'react-router-dom';
@@ -89,8 +89,7 @@ function App() {
               <Route path="/" element={<MainPage />} />
               <Route path="/Login" element={<AuthPage mode="login" />} />
               <Route path="/Signup" element={<AuthPage mode="signup" />} />
-              <Route path="/Account" element={<AccountPage />} />
-              <Route path="/Crawls" element={<MyCrawlsPage userBarCrawls={userBarCrawls} />} />
+              <Route path="/Dashboard" element={<AccountPage />} />
               <Route path="/Crawl/:slug" element={<SingleCrawlPage />} />
             </Routes>
           </Box>
