@@ -176,21 +176,42 @@ const FriendManagement = () => {
     ))
   }
 
-  const renderAvatar = (user) => (
-    user.UserAvatarType !== 'text' ? (
-      <Avatar2 size="50px" name={user.id} variant={user.UserAvatarType} />
-    ) : (
-      <Avatar sx={{
-        backgroundColor: theme.primary,
-        fontSize: '20px',
-        color: 'white',
-        width: 50,
-        height: 50,
-      }}>
-        {stringAvatar(user.UserFirstName + ' ' + user.UserLastName)}
-      </Avatar>
-    )
-  );
+  const renderAvatar = (user, x) => {
+    if (x) {
+      return user.UserAvatarType !== 'text' ? (
+        <Avatar2 size="50px" name={user.id} variant={user.UserAvatarType} />
+      ) : (
+        <Avatar
+          sx={{
+            backgroundColor: theme.primary,
+            fontSize: '20px',
+            color: 'white',
+            width: 50,
+            height: 50,
+          }}
+        >
+          {stringAvatar(user.UserFirstName + ' ' + user.UserLastName)}
+        </Avatar>
+      );
+    } else {
+      return user.FriendAva !== 'text' ? (
+        <Avatar2 size="50px" name={user.id} variant={user.FriendAva} />
+      ) : (
+        <Avatar
+          sx={{
+            backgroundColor: theme.primary,
+            fontSize: '20px',
+            color: 'white',
+            width: 50,
+            height: 50,
+          }}
+        >
+          {stringAvatar(user.Name + ' ' + user.Name)}
+        </Avatar>
+      );
+    }
+  };
+  
 
   const renderButton = (user, actionType) => (
     <Button
@@ -274,7 +295,7 @@ const FriendManagement = () => {
               key={user.id}
             >
               
-              {renderAvatar(user)}
+              {renderAvatar(user, true)}
               <ListItemText
                 sx={{ marginLeft: '10px' }}
                 primary={`${user.UserFirstName} ${user.UserLastName}`}
@@ -291,6 +312,7 @@ const FriendManagement = () => {
 
   const renderRequestsTab = () => {
     const filteredRequests = activeUser.Friends[0]?.filter(friend => friend.Type !== 'friends');
+    console.log(filteredRequests)
     return (
       <>
         {filteredRequests?.length > 0 ? (
@@ -337,7 +359,7 @@ const FriendManagement = () => {
               disableGutters 
               key={friend.friendId} 
               alignItems="center">
-                {renderAvatar(friend)}
+                {renderAvatar(friend, false)}
                 <ListItemText
                   primary={<Box style={{marginLeft: '10px'}}>{friend.Name}</Box>}
                   secondary={
@@ -395,7 +417,7 @@ const FriendManagement = () => {
               </Box>
               )}}
               disableGutters sx={{ p: 0 }} key={friend.friendId}>
-                {renderAvatar(friend)}
+                {renderAvatar(friend, false)}
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', flex: 1 }}>
                   <ListItemText primary={<Box style={{marginLeft: '10px'}}>{friend.Name}</Box>} />
                 </Box>

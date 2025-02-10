@@ -60,7 +60,6 @@ function App() {
     }
   }, []);
 
-  // load friends and user crawls
   useEffect(() => {
     if (!activeUser?.UserId) return;
 
