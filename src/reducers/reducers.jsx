@@ -24,6 +24,7 @@ const initialState = {
   barResults: [],
   selectedBars: [],
   userBarCrawls: [],
+  localBarCrawls: [],
   barResultsInBounds: [],
   alert: {
     open: false,
@@ -132,6 +133,11 @@ const rootReducer = (state = initialState, action) => {
       return {
         ...state,
         userBarCrawls: action.payload,
+      };
+    case 'SET_LOCAL_BAR_CRAWLS':
+      return {
+        ...state,
+        localBarCrawls: action.payload,
       };
     case 'SET_UNSEEN_REQUESTS':
       return {

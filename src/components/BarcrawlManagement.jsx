@@ -62,6 +62,7 @@ function BarcrawlManagement() {
     const dispatch = useDispatch();
     const theme = useSelector((state) => state.theme);
     const userBarCrawls = useSelector((state) => state.userBarCrawls);
+    const localBarCrawls = useSelector((state) => state.localBarCrawls);
     const isLarge = useSelector((state) => state.isLarge);
     const [expanded, setExpanded] = useState("myBarCrawls");
 
@@ -175,11 +176,15 @@ function BarcrawlManagement() {
                 }
             />
             <BarCrawlSection
-                title="Other Bar Crawls"
+                title="Nearby Public Bar Crawls"
                 panel="otherBarCrawls"
                 expanded={expanded}
                 handleExpand={handleExpand}
-                content={<Typography>Other Bar stuff here</Typography>}
+                content={
+                    localBarCrawls.length > 0 ? 
+                        localBarCrawls.map(renderCrawlDetails) : 
+                            <Typography variant="caption" >There are no public bar crawls in your area</Typography>
+                }
             />
         </div>
     );

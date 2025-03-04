@@ -5,13 +5,13 @@ import Navbar from './components/Navbar';
 import MainPage from './pages/MainPage';
 import AuthPage from './pages/AuthPage';
 import { Alert, Fade, Snackbar, Modal, Typography } from '@mui/material';
-import { setActiveUser, setAlert, setUserBarCrawls, setModal, setIsLoading, setUnseenRequests, setLocation } from './actions/actions';
+import { setActiveUser, setAlert, setUserBarCrawls, setModal, setIsLoading, setUnseenRequests, setLocation, setLocalBarCrawls } from './actions/actions';
 import Cookies from 'js-cookie';
 import AccountPage from './pages/DashboardPage';
 import MyCrawlsPage from './pages/MyCrawlsPage';
 import SingleCrawlPage from './pages/SingleCrawlPage';
 import { Routes, Route } from 'react-router-dom';
-import { getAllBarCrawlsForUser } from './services/BarCrawlService';
+import { getAllBarCrawlsForUser, getAllLocalBarCrawls } from './services/BarCrawlService';
 import { getFriendsData } from './services/FriendsService';
 
 function App() {
@@ -26,7 +26,6 @@ function App() {
   const location = useSelector((state) => state.location);
   const userBarCrawls = useSelector((state) => state.userBarCrawls);
 
-  //get user location
   useEffect(() => {
     if (navigator.geolocation && !location) {
       navigator.geolocation.getCurrentPosition(
@@ -57,6 +56,20 @@ function App() {
       dispatch(setActiveUser({ key: 'UserAvatarType', value: user.UserAvatarType }));
       dispatch(setActiveUser({ key: 'Friends', value: user.Friends }));
       dispatch(setActiveUser({ key: 'userLocation', value: user.userLocation }));
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            dispatch(setLocation({ latitude, longitude }));
+          },
+          (error) => {
+            console.error('Error getting location:', error);
+            dispatch(setLocation(null));
+          }
+        );
+      } else {
+        console.error('Geolocation is not supported by this browser.');
+      }
     }
   }, []);
 
@@ -72,6 +85,13 @@ function App() {
       dispatch(setUserBarCrawls(response));
     });
   }, [activeUser?.UserId, changeInData, dispatch]);
+
+  useEffect(()=>{
+    if (!activeUser?.UserId) return;
+    getAllLocalBarCrawls(location, activeUser.UserId).then((response) => {
+      dispatch(setLocalBarCrawls(response));
+    });
+  }, [location])
 
   const handleClose = (_, reason) => {
     if (reason === 'clickaway') return;

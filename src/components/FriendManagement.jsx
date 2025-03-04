@@ -195,7 +195,7 @@ const FriendManagement = () => {
       );
     } else {
       return user.FriendAva !== 'text' ? (
-        <Avatar2 size="50px" name={user.id} variant={user.FriendAva} />
+        <Avatar2 size="50px" name={user.friendId} variant={user.FriendAva} />
       ) : (
         <Avatar
           sx={{
@@ -271,30 +271,39 @@ const FriendManagement = () => {
         <List>
           {results.map((user) => (
             <ListItemButton 
-              onClick={() => {openModal(
-                <Box
-                  sx={{
-                    position: "absolute",
-                    top: "50%",
-                    left: "50%",
-                    transform: "translate(-50%, -50%)",
-                    width: 400,
-                    bgcolor: theme.white,
-                    boxShadow: 24,
-                    p: 4,
-                    borderRadius: 2,
-                  }}
-                >
-                  <Font text={`${user.UserFirstName} ${user.UserLastName}`} color={theme.primary} variant="h6" weight="bold" fontFamily="PrimaryOrig" />
-                  {getAcceptedFriendStatus(user.id) ? 'Friend' : user.UserEmail}
-                  <Divider sx={{margin: '10px 0px'}} />
-                  {!getAcceptedFriendStatus(user.id) && renderButton(user, 'add')}
-              </Box>
-              )}}
+              onClick={() => {
+                if (getAcceptedFriendStatus(user.id)) return; 
+            
+                openModal(
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: "50%",
+                      left: "50%",
+                      transform: "translate(-50%, -50%)",
+                      width: 400,
+                      bgcolor: theme.white,
+                      boxShadow: 24,
+                      p: 4,
+                      borderRadius: 2,
+                    }}
+                  >
+                    <Font 
+                      text={`${user.UserFirstName} ${user.UserLastName}`} 
+                      color={theme.primary} 
+                      variant="h6" 
+                      weight="bold" 
+                      fontFamily="PrimaryOrig" 
+                    />
+                    {getAcceptedFriendStatus(user.id) ? 'Friend' : user.UserEmail}
+                    <Divider sx={{ margin: '10px 0px' }} />
+                    {!getAcceptedFriendStatus(user.id) && renderButton(user, 'add')}
+                  </Box>
+                );
+              }} 
               disableGutters 
               key={user.id}
             >
-              
               {renderAvatar(user, true)}
               <ListItemText
                 sx={{ marginLeft: '10px' }}
@@ -312,7 +321,6 @@ const FriendManagement = () => {
 
   const renderRequestsTab = () => {
     const filteredRequests = activeUser.Friends[0]?.filter(friend => friend.Type !== 'friends');
-    console.log(filteredRequests)
     return (
       <>
         {filteredRequests?.length > 0 ? (
@@ -389,6 +397,7 @@ const FriendManagement = () => {
 
   const renderFriendsTab = () => {
     const friendsList = activeUser.Friends[0]?.filter(friend => friend.Type === 'friends');
+    
     return (
       <>
         {friendsList?.length > 0 ? (

@@ -4,13 +4,15 @@ import { useDispatch, useSelector } from 'react-redux';
 import ProfileManagement from '../components/ProfileManagement.jsx';
 import FriendManagement from '../components/FriendManagement.jsx';
 import BarcrawlManagement from '../components/BarcrawlManagement.jsx';
+import { useNavigate } from 'react-router';
 
 function DashboardPage() {
   const theme = useSelector((state) => state.theme);
   const isMobile = useSelector((state) => state.isMobile);
   const isTablet = useSelector((state) => state.isTablet);
+  const activeUser = useSelector((state) => state.activeUser);
   const [activePane, setActivePane] = useState({ Name: '', active: false });
-
+  const navigate = useNavigate();
   const containerRef = useRef(null);
 
   const setPaneToActive = (paneName) => {
@@ -19,6 +21,9 @@ function DashboardPage() {
   };
 
   useEffect(() => {
+    if (activeUser.UserId === '') {
+      navigate('/Login');
+    }
     const handleClickOutside = (event) => {
       if (containerRef.current && !containerRef.current.contains(event.target)) {
         setActivePane({ Name: '', active: false });

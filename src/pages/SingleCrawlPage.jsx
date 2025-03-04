@@ -11,6 +11,7 @@ import MapLibreGlDirections, { LoadingIndicatorControl } from "@maplibre/maplibr
 import BarCrawlOrganizerRoot from '../components/BarCrawlOrganizerRoot';
 import { setIsAdmin, setSelectedBars } from '../actions/actions';
 import { getFriendsData } from '../services/FriendsService';
+import { darkenColor } from '../functions/functions';
 
 function SingleCrawlPage() {
   const dispatch = useDispatch();
@@ -32,7 +33,6 @@ function SingleCrawlPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
   
-  // load crawl by id
   useEffect(() => {
     const fetchCrawl = async () => {
       try {
@@ -54,8 +54,6 @@ function SingleCrawlPage() {
     fetchCrawl();
   }, [slug, dispatch]);
   
-  
-  // set isAdmin global state and local state for friends of the bar crawl owner
   useEffect(() => {
     if (crawl && crawl.admins) {
       const isUserAdmin = crawl.admins.includes(activeUser.UserId);
@@ -110,7 +108,6 @@ function SingleCrawlPage() {
     }
   }, [friendsOfCrawlOwner])
 
-  // render map
   useEffect(() => {
     if (!mapLoaded && crawlLoaded) {
       if (map) return;
@@ -146,7 +143,6 @@ function SingleCrawlPage() {
         marker.getElement().setAttribute('data-placeid', x.place_id);
       });
 
-      // zoom to fit results
       newMap.fitBounds(bounds, {
         padding: { top: 65, bottom: 65, left: 25, right: 25 }
       });
@@ -184,13 +180,11 @@ function SingleCrawlPage() {
        navigate('/Login');
         break;
       case 'User is not invited':
-      // code to request invite
           break;
       case 'User is not friends':
-      //  code to request friendship
         break;
       default:
-        navigate('/Account');
+        navigate('/Dashboard');
     }
   }
 

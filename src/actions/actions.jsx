@@ -46,6 +46,10 @@ export const setUserBarCrawls = (payload) => ({
   type: 'SET_USER_BAR_CRAWLS',
   payload,
 });
+export const setLocalBarCrawls = (payload) => ({
+  type: 'SET_LOCAL_BAR_CRAWLS',
+  payload,
+});
 export const setLocation = (payload) => ({
   type: 'SET_LOCATION',
   payload,

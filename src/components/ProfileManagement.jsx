@@ -15,11 +15,10 @@ function ProfileManagement() {
   const theme = useSelector((state) => state.theme);
   const activeUser = useSelector((state) => state.activeUser);
   const isLoading = useSelector((state) => state.isLoading);
-
-  const [avaRoto, setAvaRoto] = useState(activeUser.UserAvatarType);
+  const [avaRoto, setAvaRoto] = useState(null);
   const [formState, setFormState] = useState({
-    firstName: activeUser.Name.split(' ')[0],
-    lastName: activeUser.Name.split(' ')[1] || '',
+    firstName: '',
+    lastName: '',
     oldPassword: '',
     newPassword: '',
     confirmPassword: '',
@@ -28,6 +27,21 @@ function ProfileManagement() {
     showConfirmPassword: false,
     passwordAccordionExpanded: false,
   });
+
+  useEffect(()=>{
+    setAvaRoto(activeUser.UserAvatarType)
+    setFormState({
+      firstName: activeUser.Name.split(' ')[0],
+      lastName: activeUser.Name.split(' ')[1] || '',
+      oldPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+      showOldPassword: false,
+      showNewPassword: false,
+      showConfirmPassword: false,
+      passwordAccordionExpanded: false,
+    })
+  }, [activeUser])
 
   const handleChange = (key, value) => setFormState(prevState => ({ ...prevState, [key]: value }));
 

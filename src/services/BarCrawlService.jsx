@@ -1,5 +1,6 @@
 import { collection, addDoc, serverTimestamp, getDoc, setDoc, doc, deleteDoc, updateDoc, arrayUnion } from "firebase/firestore";
 import { db } from '../config/Firebase.jsx';
+import { haversineDistance } from "../functions/functions.jsx";
 
 export async function saveBarCrawl(userID, barCrawlInfo, crawlName, startDate, endDate, intamacyLevel, crawlID = null) {
   try {
@@ -64,6 +65,47 @@ export async function getBarCrawl(crawlId) {
     return Promise.reject(Error(`Error fetching document: ${coll}.${id}`))
   }
 };
+
+export async function getAllLocalBarCrawls(location, userID) {
+  console.log(userID)
+  try {
+    const localCrawlQuery = db
+      .collection('BarCrawls')
+      .where('intamacyLevel', '==', 'Public'); 
+
+    const localCrawlSnapshot = await localCrawlQuery.get();
+    const localCrawlCrawls = localCrawlSnapshot.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .filter(crawl => {
+        if (!crawl.barCrawlInfo || crawl.barCrawlInfo.length === 0) {
+          return false;
+        }
+
+        if (crawl.admins && crawl.admins.includes(userID)) {
+          return false;
+        }
+
+        if (crawl.invitees && crawl.invitees.some(invitee => invitee.UserID === userID && invitee.attendance === true)) {
+          return false;
+        }        
+
+        const distanceKm = haversineDistance(
+          location.latitude, 
+          location.longitude, 
+          crawl.barCrawlInfo[0].barLat, 
+          crawl.barCrawlInfo[0].barLng
+        );
+
+        const distanceMiles = distanceKm * 0.621371;
+        return distanceMiles <= 20;
+      });
+
+    return localCrawlCrawls;
+  } catch (e) {
+    console.error('Error fetching local bar crawls:', e);
+    return [];
+  }
+}
 
 export async function getAllBarCrawlsForUser(userId) {
   try {
